@@ -1,43 +1,29 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { RootState } from './store';
+import Layout from './components/Layout';
+import Dashboard from './pages/Dashboard';
+import Materials from './pages/Materials';
+import Recipes from './pages/Recipes';
+import RunBatch from './pages/RunBatch';
+import Reports from './pages/Reports';
+import QRGenerator from './pages/QRGenerator';
 
-// Placeholder components - will be implemented later
-const LoginPage = () => <div className="flex items-center justify-center h-screen">
-  <div className="text-center">
-    <h1 className="text-4xl font-bold text-primary-600 mb-4">MixSense</h1>
-    <p className="text-gray-600">Login Page - Coming Soon</p>
+// Login Page Component
+const LoginPage = () => <div className="flex items-center justify-center h-screen bg-gray-100">
+  <div className="card max-w-md w-full mx-4">
+    <h1 className="text-4xl font-bold text-primary-600 mb-2 text-center">MixSense</h1>
+    <p className="text-gray-600 text-center mb-6">Mixing Control System</p>
+    <div className="bg-warning-50 border border-warning-200 rounded-lg p-4">
+      <p className="text-sm text-warning-800">
+        <strong>Note:</strong> The full authentication system is implemented in the backend.
+        This login page UI will be completed in the next phase with form handling and validation.
+      </p>
+      <p className="text-sm text-warning-800 mt-2">
+        For testing, you can use the backend API directly at <code className="bg-warning-100 px-2 py-1 rounded">POST /api/auth/login</code>
+      </p>
+    </div>
   </div>
-</div>;
-
-const DashboardPage = () => <div className="p-8">
-  <h1 className="text-3xl font-bold mb-4">Dashboard</h1>
-  <p>Welcome to MixSense - Mixer Batch Reporting System</p>
-</div>;
-
-const MaterialsPage = () => <div className="p-8">
-  <h1 className="text-3xl font-bold mb-4">Materials Management</h1>
-  <p>Materials Page - Coming Soon</p>
-</div>;
-
-const RecipesPage = () => <div className="p-8">
-  <h1 className="text-3xl font-bold mb-4">Recipe Management</h1>
-  <p>Recipes Page - Coming Soon</p>
-</div>;
-
-const RunBatchPage = () => <div className="p-8">
-  <h1 className="text-3xl font-bold mb-4">Run Batch</h1>
-  <p>Run Batch Page - Coming Soon</p>
-</div>;
-
-const ReportsPage = () => <div className="p-8">
-  <h1 className="text-3xl font-bold mb-4">Reports</h1>
-  <p>Reports Page - Coming Soon</p>
-</div>;
-
-const QRGeneratorPage = () => <div className="p-8">
-  <h1 className="text-3xl font-bold mb-4">QR Generator</h1>
-  <p>QR Generator Page - Coming Soon</p>
 </div>;
 
 // Protected Route Component
@@ -48,7 +34,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/login" replace />;
   }
 
-  return <>{children}</>;
+  return <Layout>{children}</Layout>;
 };
 
 // Admin Route Component
@@ -63,7 +49,7 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/dashboard" replace />;
   }
 
-  return <>{children}</>;
+  return <Layout>{children}</Layout>;
 };
 
 function App() {
@@ -78,7 +64,7 @@ function App() {
           path="/dashboard"
           element={
             <ProtectedRoute>
-              <DashboardPage />
+              <Dashboard />
             </ProtectedRoute>
           }
         />
@@ -87,7 +73,7 @@ function App() {
           path="/materials"
           element={
             <AdminRoute>
-              <MaterialsPage />
+              <Materials />
             </AdminRoute>
           }
         />
@@ -95,9 +81,9 @@ function App() {
         <Route
           path="/recipes"
           element={
-            <AdminRoute>
-              <RecipesPage />
-            </AdminRoute>
+            <ProtectedRoute>
+              <Recipes />
+            </ProtectedRoute>
           }
         />
 
@@ -105,7 +91,7 @@ function App() {
           path="/batch"
           element={
             <ProtectedRoute>
-              <RunBatchPage />
+              <RunBatch />
             </ProtectedRoute>
           }
         />
@@ -114,7 +100,7 @@ function App() {
           path="/reports"
           element={
             <ProtectedRoute>
-              <ReportsPage />
+              <Reports />
             </ProtectedRoute>
           }
         />
@@ -122,9 +108,9 @@ function App() {
         <Route
           path="/qr-generator"
           element={
-            <ProtectedRoute>
-              <QRGeneratorPage />
-            </ProtectedRoute>
+            <AdminRoute>
+              <QRGenerator />
+            </AdminRoute>
           }
         />
 
@@ -132,10 +118,13 @@ function App() {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
         {/* 404 page */}
-        <Route path="*" element={<div className="flex items-center justify-center h-screen">
+        <Route path="*" element={<div className="flex items-center justify-center h-screen bg-gray-100">
           <div className="text-center">
             <h1 className="text-6xl font-bold text-gray-400 mb-4">404</h1>
-            <p className="text-xl text-gray-600">Page not found</p>
+            <p className="text-xl text-gray-600 mb-4">Page not found</p>
+            <a href="/dashboard" className="btn-primary">
+              Go to Dashboard
+            </a>
           </div>
         </div>} />
       </Routes>
