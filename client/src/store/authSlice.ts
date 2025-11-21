@@ -8,9 +8,22 @@ interface AuthState {
   loading: boolean;
 }
 
+// Safely load user from localStorage
+const loadUserFromStorage = (): User | null => {
+  try {
+    const raw = localStorage.getItem('user');
+    if (!raw) return null;
+    return JSON.parse(raw) as User;
+  } catch (error) {
+    console.error('Failed to parse user from localStorage:', error);
+    localStorage.removeItem('user');
+    return null;
+  }
+};
+
 const initialState: AuthState = {
   token: localStorage.getItem('token'),
-  user: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!) : null,
+  user: loadUserFromStorage(),
   isAuthenticated: !!localStorage.getItem('token'),
   loading: false,
 };
