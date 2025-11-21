@@ -56,6 +56,7 @@ export class RecipesService {
    */
   async createRecipe(data: {
     name: string;
+    createdByUserId: number;
     steps: Array<{
       materialId: number;
       equipmentId?: number;
@@ -98,6 +99,7 @@ export class RecipesService {
     const recipe = await prisma.recipe.create({
       data: {
         name: data.name,
+        createdByUserId: data.createdByUserId,
         steps: {
           create: data.steps.map((step) => ({
             materialId: step.materialId,
@@ -186,7 +188,7 @@ export class RecipesService {
     // Update recipe in a transaction
     const recipe = await prisma.$transaction(async (tx) => {
       // Update recipe name if provided
-      const updatedRecipe = await tx.recipe.update({
+      await tx.recipe.update({
         where: { id },
         data: {
           name: data.name,

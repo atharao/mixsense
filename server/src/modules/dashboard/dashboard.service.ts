@@ -320,7 +320,7 @@ export class DashboardService {
       },
       take: limit,
       orderBy: {
-        startTime: 'desc',
+        timestamp: 'desc',
       },
       include: {
         batch: {
@@ -350,11 +350,11 @@ export class DashboardService {
       operator: log.batch.operator.username,
       material: log.material.name,
       materialCode: log.material.code,
-      setpoint: log.setpointSnapshot,
-      actualWeight: log.actualWeight,
-      tolerance: log.toleranceSnapshot,
-      deviation: ((Math.abs(log.actualWeight - log.setpointSnapshot) / log.setpointSnapshot) * 100).toFixed(2),
-      timestamp: log.startTime,
+      setpoint: Number(log.setpointSnapshot),
+      actualWeight: Number(log.actualWeight),
+      tolerance: Number(log.toleranceSnapshot),
+      deviation: ((Math.abs(Number(log.actualWeight) - Number(log.setpointSnapshot)) / Number(log.setpointSnapshot)) * 100).toFixed(2),
+      timestamp: log.timestamp,
     }));
   }
 }

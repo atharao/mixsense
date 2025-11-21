@@ -9,7 +9,7 @@ export class RecipesController {
    * GET /api/recipes
    * Get all recipes
    */
-  async getAllRecipes(req: Request, res: Response) {
+  async getAllRecipes(_req: Request, res: Response) {
     try {
       const recipes = await recipesService.getAllRecipes();
       return res.json({
@@ -71,8 +71,16 @@ export class RecipesController {
   async createRecipe(req: Request, res: Response) {
     try {
       const { name, steps } = req.body;
+      const userId = (req as any).user?.userId;
 
       // Validation
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'User not authenticated',
+        });
+      }
+
       if (!name || !steps || !Array.isArray(steps) || steps.length === 0) {
         return res.status(400).json({
           success: false,
@@ -109,7 +117,11 @@ export class RecipesController {
         }
       }
 
-      const recipe = await recipesService.createRecipe({ name, steps });
+      const recipe = await recipesService.createRecipe({
+        name,
+        steps,
+        createdByUserId: userId
+      });
 
       return res.status(201).json({
         success: true,

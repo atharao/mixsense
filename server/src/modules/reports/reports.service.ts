@@ -181,7 +181,7 @@ export class ReportsService {
       log.material.code,
       Number(log.setpointSnapshot).toFixed(2),
       Number(log.actualWeight).toFixed(2),
-      `±${log.toleranceSnapshot}%`,
+      `±${Number(log.toleranceSnapshot)}%`,
       isWithinTolerance(log) ? 'Yes' : 'No',
       log.scannedQrCode || '-',
     ]);
@@ -323,9 +323,9 @@ export class ReportsService {
           log.step.stepOrder,
           log.material.name,
           log.material.code,
-          log.setpointSnapshot,
-          log.actualWeight,
-          `±${log.toleranceSnapshot}%`,
+          Number(log.setpointSnapshot),
+          Number(log.actualWeight),
+          `±${Number(log.toleranceSnapshot)}%`,
           isWithinTolerance(log) ? 'Yes' : 'No',
           log.scannedQrCode || '-',
           log.timestamp.toLocaleString(),
@@ -354,7 +354,8 @@ export class ReportsService {
       ];
     });
 
-    return await workbook.xlsx.writeBuffer() as Buffer;
+    const buffer = await workbook.xlsx.writeBuffer();
+    return Buffer.from(buffer);
   }
 
   /**

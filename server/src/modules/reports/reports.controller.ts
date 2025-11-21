@@ -70,7 +70,7 @@ export class ReportsController {
 
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename=batch_${batchId}_report.pdf`);
-      res.send(pdfBuffer);
+      return res.send(pdfBuffer);
     } catch (error: any) {
       logger.error(`Error generating PDF report for batch ${req.params.batchId}:`, error);
 
@@ -124,7 +124,7 @@ export class ReportsController {
       const timestamp = new Date().toISOString().split('T')[0];
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', `attachment; filename=batch_reports_${timestamp}.xlsx`);
-      res.send(excelBuffer);
+      return res.send(excelBuffer);
     } catch (error: any) {
       logger.error('Error generating Excel report:', error);
       return res.status(500).json({

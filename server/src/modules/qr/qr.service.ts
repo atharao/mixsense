@@ -193,8 +193,8 @@ export class QRService {
     return await this.generateQRCode({
       materialCode: log.material.code,
       materialName: log.material.name,
-      setpoint: log.setpointSnapshot,
-      actualValue: log.actualWeight,
+      setpoint: Number(log.setpointSnapshot),
+      actualValue: Number(log.actualWeight),
       equipment: log.batch.equipment?.name || 'N/A',
     });
   }
@@ -251,8 +251,8 @@ export class QRService {
         const { qrCodeImage, qrCodeData } = await this.generateQRCode({
           materialCode: step.material.code,
           materialName: step.material.name,
-          setpoint: step.setpoint,
-          actualValue: step.setpoint, // For pre-generation, use setpoint as placeholder
+          setpoint: Number(step.setpoint),
+          actualValue: Number(step.setpoint), // For pre-generation, use setpoint as placeholder
           equipment: step.equipment?.name || 'Any',
         });
 

@@ -237,7 +237,7 @@ export const getMaterialByCode = async (
 };
 
 export const getIngredients = async (
-  req: Request,
+  _req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -255,7 +255,7 @@ export const getIngredients = async (
 };
 
 export const getEquipment = async (
-  req: Request,
+  _req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {

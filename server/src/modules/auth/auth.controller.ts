@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from './auth.service';
-import { logger } from '../../utils/logger';
 
 const authService = new AuthService();
 
@@ -151,7 +150,7 @@ export const changePassword = async (
 };
 
 export const logout = async (
-  req: Request,
+  _req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
