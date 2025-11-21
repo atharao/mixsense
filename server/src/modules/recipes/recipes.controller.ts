@@ -12,13 +12,13 @@ export class RecipesController {
   async getAllRecipes(req: Request, res: Response) {
     try {
       const recipes = await recipesService.getAllRecipes();
-      res.json({
+      return res.json({
         success: true,
         data: recipes,
       });
     } catch (error: any) {
       logger.error('Error fetching recipes:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: 'Failed to fetch recipes',
         error: error.message,
@@ -42,7 +42,7 @@ export class RecipesController {
       }
 
       const recipe = await recipesService.getRecipeById(id);
-      res.json({
+      return res.json({
         success: true,
         data: recipe,
       });
@@ -56,7 +56,7 @@ export class RecipesController {
         });
       }
 
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: 'Failed to fetch recipe',
         error: error.message,
@@ -111,7 +111,7 @@ export class RecipesController {
 
       const recipe = await recipesService.createRecipe({ name, steps });
 
-      res.status(201).json({
+      return res.status(201).json({
         success: true,
         data: recipe,
         message: 'Recipe created successfully',
@@ -119,7 +119,7 @@ export class RecipesController {
     } catch (error: any) {
       logger.error('Error creating recipe:', error);
 
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: 'Failed to create recipe',
         error: error.message,
@@ -184,7 +184,7 @@ export class RecipesController {
 
       const recipe = await recipesService.updateRecipe(id, { name, steps });
 
-      res.json({
+      return res.json({
         success: true,
         data: recipe,
         message: 'Recipe updated successfully',
@@ -199,7 +199,7 @@ export class RecipesController {
         });
       }
 
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: 'Failed to update recipe',
         error: error.message,
@@ -224,7 +224,7 @@ export class RecipesController {
 
       await recipesService.deleteRecipe(id);
 
-      res.json({
+      return res.json({
         success: true,
         message: 'Recipe deleted successfully',
       });
@@ -245,7 +245,7 @@ export class RecipesController {
         });
       }
 
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: 'Failed to delete recipe',
         error: error.message,

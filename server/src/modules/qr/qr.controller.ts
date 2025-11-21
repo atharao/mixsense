@@ -36,14 +36,14 @@ export class QRController {
         equipment,
       });
 
-      res.json({
+      return res.json({
         success: true,
         data: result,
         message: 'QR code generated successfully',
       });
     } catch (error: any) {
       logger.error('Error generating QR code:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: 'Failed to generate QR code',
         error: error.message,
@@ -82,7 +82,7 @@ export class QRController {
         });
       }
 
-      res.json({
+      return res.json({
         success: true,
         message: result.message,
         data: result.data,
@@ -90,7 +90,7 @@ export class QRController {
       });
     } catch (error: any) {
       logger.error('Error validating QR code:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: 'Failed to validate QR code',
         error: error.message,
@@ -115,7 +115,7 @@ export class QRController {
 
       const result = await qrService.generateBatchLogQR(id);
 
-      res.json({
+      return res.json({
         success: true,
         data: result,
         message: 'QR code generated successfully',
@@ -130,7 +130,7 @@ export class QRController {
         });
       }
 
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: 'Failed to generate QR code',
         error: error.message,
@@ -155,7 +155,7 @@ export class QRController {
 
       const result = await qrService.generateRecipeQRCodes(id);
 
-      res.json({
+      return res.json({
         success: true,
         data: result,
         message: 'QR codes generated successfully',
@@ -170,7 +170,7 @@ export class QRController {
         });
       }
 
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: 'Failed to generate QR codes',
         error: error.message,

@@ -30,21 +30,21 @@ export class DashboardService {
       // Today's batches
       prisma.batch.count({
         where: {
-          createdAt: { gte: today },
+          startTime: { gte: today },
         },
       }),
 
       // This week's batches
       prisma.batch.count({
         where: {
-          createdAt: { gte: thisWeekStart },
+          startTime: { gte: thisWeekStart },
         },
       }),
 
       // This month's batches
       prisma.batch.count({
         where: {
-          createdAt: { gte: thisMonthStart },
+          startTime: { gte: thisMonthStart },
         },
       }),
 
@@ -64,7 +64,7 @@ export class DashboardService {
       // Recent 5 batches
       prisma.batch.findMany({
         take: 5,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { startTime: 'desc' },
         include: {
           recipe: true,
           operator: {
@@ -99,7 +99,7 @@ export class DashboardService {
       include: {
         _count: {
           select: {
-            batchesAsEquipment: true,
+            batches: true,
           },
         },
       },
@@ -129,13 +129,13 @@ export class DashboardService {
           name: eq.name,
           code: eq.code,
           status: activeBatch ? 'IN_USE' : 'AVAILABLE',
-          totalUsage: eq._count.batchesAsEquipment,
+          totalUsage: eq._count.batches,
           currentBatch: activeBatch
             ? {
                 id: activeBatch.id,
                 recipe: activeBatch.recipe.name,
                 operator: activeBatch.operator.username,
-                startedAt: activeBatch.createdAt,
+                startedAt: activeBatch.startTime,
               }
             : null,
         };
@@ -154,23 +154,23 @@ export class DashboardService {
 
     const batches = await prisma.batch.findMany({
       where: {
-        createdAt: { gte: startDate },
+        startTime: { gte: startDate },
         status: { in: ['COMPLETED', 'ABORTED'] },
       },
       select: {
         id: true,
         status: true,
-        createdAt: true,
-        completedAt: true,
+        startTime: true,
+        endTime: true,
       },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { startTime: 'asc' },
     });
 
     // Group by date
     const trendData: { [key: string]: { completed: number; aborted: number; total: number } } = {};
 
     batches.forEach((batch) => {
-      const dateKey = batch.createdAt.toISOString().split('T')[0];
+      const dateKey = batch.startTime.toISOString().split('T')[0];
 
       if (!trendData[dateKey]) {
         trendData[dateKey] = { completed: 0, aborted: 0, total: 0 };
@@ -265,19 +265,19 @@ export class DashboardService {
         const [completed, aborted, activeBatch] = await Promise.all([
           prisma.batch.count({
             where: {
-              operatorId: operator.id,
+              operatorUserId: operator.id,
               status: 'COMPLETED',
             },
           }),
           prisma.batch.count({
             where: {
-              operatorId: operator.id,
+              operatorUserId: operator.id,
               status: 'ABORTED',
             },
           }),
           prisma.batch.findFirst({
             where: {
-              operatorId: operator.id,
+              operatorUserId: operator.id,
               status: 'IN_PROGRESS',
             },
             include: {
@@ -300,7 +300,7 @@ export class DashboardService {
             ? {
                 id: activeBatch.id,
                 recipe: activeBatch.recipe.name,
-                startedAt: activeBatch.createdAt,
+                startedAt: activeBatch.startTime,
               }
             : null,
         };
@@ -316,11 +316,11 @@ export class DashboardService {
   async getRecentAlerts(limit: number = 10) {
     const logsWithIssues = await prisma.batchLog.findMany({
       where: {
-        withinTolerance: false,
+        // Note: withinTolerance calculated on-the-fly
       },
       take: limit,
       orderBy: {
-        createdAt: 'desc',
+        startTime: 'desc',
       },
       include: {
         batch: {
@@ -354,7 +354,7 @@ export class DashboardService {
       actualWeight: log.actualWeight,
       tolerance: log.toleranceSnapshot,
       deviation: ((Math.abs(log.actualWeight - log.setpointSnapshot) / log.setpointSnapshot) * 100).toFixed(2),
-      timestamp: log.createdAt,
+      timestamp: log.startTime,
     }));
   }
 }

@@ -41,3 +41,6 @@ export const auth = (req: Request, res: Response, next: NextFunction): void => {
     });
   }
 };
+
+// Alias for backward compatibility
+export const authenticate = auth;

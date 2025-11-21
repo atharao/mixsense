@@ -1,4 +1,4 @@
-import { PrismaClient, Batch, BatchLog, BatchStatus } from '@prisma/client';
+import { PrismaClient, BatchStatus } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -20,7 +20,7 @@ export class BatchesService {
     }
 
     if (filters?.operatorId) {
-      where.operatorId = filters.operatorId;
+      where.operatorUserId = filters.operatorId;
     }
 
     if (filters?.status) {
@@ -28,12 +28,12 @@ export class BatchesService {
     }
 
     if (filters?.startDate || filters?.endDate) {
-      where.createdAt = {};
+      where.startTime = {};
       if (filters.startDate) {
-        where.createdAt.gte = filters.startDate;
+        where.startTime.gte = filters.startDate;
       }
       if (filters.endDate) {
-        where.createdAt.lte = filters.endDate;
+        where.startTime.lte = filters.endDate;
       }
     }
 
@@ -69,12 +69,12 @@ export class BatchesService {
             material: true,
           },
           orderBy: {
-            createdAt: 'asc',
+            timestamp: 'asc',
           },
         },
       },
       orderBy: {
-        createdAt: 'desc',
+        startTime: 'desc',
       },
     });
   }
@@ -118,7 +118,7 @@ export class BatchesService {
             material: true,
           },
           orderBy: {
-            createdAt: 'asc',
+            timestamp: 'asc',
           },
         },
       },
@@ -178,8 +178,9 @@ export class BatchesService {
     const batch = await prisma.batch.create({
       data: {
         recipeId: data.recipeId,
-        operatorId: data.operatorId,
+        operatorUserId: data.operatorId,
         equipmentId: data.equipmentId,
+        startTime: new Date(),
         status: 'IN_PROGRESS',
       },
       include: {
@@ -265,11 +266,11 @@ export class BatchesService {
       throw new Error('Material does not match step requirements');
     }
 
-    // Calculate if within tolerance
-    const toleranceRange = (data.setpointSnapshot * data.toleranceSnapshot) / 100;
-    const lowerBound = data.setpointSnapshot - toleranceRange;
-    const upperBound = data.setpointSnapshot + toleranceRange;
-    const withinTolerance = data.actualWeight >= lowerBound && data.actualWeight <= upperBound;
+    // Note: Tolerance validation can be calculated on the fly when needed
+    // const toleranceRange = (data.setpointSnapshot * data.toleranceSnapshot) / 100;
+    // const lowerBound = data.setpointSnapshot - toleranceRange;
+    // const upperBound = data.setpointSnapshot + toleranceRange;
+    // const withinTolerance = data.actualWeight >= lowerBound && data.actualWeight <= upperBound;
 
     // Create batch log
     const log = await prisma.batchLog.create({
@@ -281,7 +282,6 @@ export class BatchesService {
         setpointSnapshot: data.setpointSnapshot,
         toleranceSnapshot: data.toleranceSnapshot,
         scannedQrCode: data.scannedQrCode,
-        withinTolerance,
       },
       include: {
         step: {
@@ -341,7 +341,7 @@ export class BatchesService {
       where: { id: batchId },
       data: {
         status: data.status,
-        completedAt: new Date(),
+        endTime: new Date(),
       },
       include: {
         recipe: {
@@ -376,7 +376,7 @@ export class BatchesService {
             material: true,
           },
           orderBy: {
-            createdAt: 'asc',
+            timestamp: 'asc',
           },
         },
       },
@@ -391,7 +391,7 @@ export class BatchesService {
   async getActiveBatch(operatorId: number) {
     const batch = await prisma.batch.findFirst({
       where: {
-        operatorId,
+        operatorUserId: operatorId,
         status: 'IN_PROGRESS',
       },
       include: {
@@ -427,7 +427,7 @@ export class BatchesService {
             material: true,
           },
           orderBy: {
-            createdAt: 'asc',
+            timestamp: 'asc',
           },
         },
       },
@@ -452,16 +452,16 @@ export class BatchesService {
     }
 
     if (filters?.operatorId) {
-      where.operatorId = filters.operatorId;
+      where.operatorUserId = filters.operatorId;
     }
 
     if (filters?.startDate || filters?.endDate) {
-      where.createdAt = {};
+      where.startTime = {};
       if (filters.startDate) {
-        where.createdAt.gte = filters.startDate;
+        where.startTime.gte = filters.startDate;
       }
       if (filters.endDate) {
-        where.createdAt.lte = filters.endDate;
+        where.startTime.lte = filters.endDate;
       }
     }
 

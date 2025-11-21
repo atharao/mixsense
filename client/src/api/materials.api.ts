@@ -1,6 +1,6 @@
 import { get, post, put, del } from './http';
 import { Material } from '../types/models';
-import { ApiResponse, CreateMaterialRequest, UpdateMaterialRequest } from '../types/api';
+import { CreateMaterialRequest, UpdateMaterialRequest } from '../types/api';
 
 export const materialsApi = {
   getAll: () => get<Material[]>('/materials'),

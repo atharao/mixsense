@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../store';
-import { startBatch, nextStep, endBatch, clearBatchState } from '../store/batchSlice';
+import { startBatch, nextStep, endBatch } from '../store/batchSlice';
 import { setRecipes } from '../store/recipesSlice';
 import { recipesApi } from '../api/recipes.api';
 import { batchesApi } from '../api/batches.api';
@@ -12,7 +12,7 @@ import { useQrScanner } from '../hooks/useQrScanner';
 const RunBatch: React.FC = () => {
   const dispatch = useDispatch();
   const { user } = useSelector((state: RootState) => state.auth);
-  const { activeBatch, currentRecipe, currentStepIndex, loadCellData, isWithinTolerance, scannedQRCode, isQRValidated } = useSelector((state: RootState) => state.batch);
+  const { activeBatch, currentRecipe, currentStepIndex, loadCellData, isWithinTolerance } = useSelector((state: RootState) => state.batch);
   const { recipes } = useSelector((state: RootState) => state.recipes);
 
   const [selectedRecipeId, setSelectedRecipeId] = useState<number>(0);
@@ -24,7 +24,7 @@ const RunBatch: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const { isConnected, error: loadCellError, currentWeight, isStable, connect, disconnect, tare } = useLoadCell();
-  const { isScanning, error: qrError, lastScannedCode, startScanning, stopScanning, reset: resetQr } = useQrScanner();
+  const { isScanning, error: _qrError, lastScannedCode, startScanning, stopScanning, reset: resetQr } = useQrScanner();
 
   useEffect(() => {
     loadRecipes();
@@ -64,7 +64,9 @@ const RunBatch: React.FC = () => {
       const response = await batchesApi.getActive();
       if (response.data.data) {
         const batch = response.data.data;
-        dispatch(startBatch({ batch, recipe: batch.recipe }));
+        if (batch.recipe) {
+          dispatch(startBatch({ batch, recipe: batch.recipe }));
+        }
       }
     } catch (error) {
       console.error('Error checking active batch:', error);
@@ -297,8 +299,8 @@ const RunBatch: React.FC = () => {
                     {currentStep.stepOrder}
                   </span>
                   <div>
-                    <h4 className="text-xl font-bold">{currentStep.material.name}</h4>
-                    <p className="text-sm text-gray-600">{currentStep.material.code}</p>
+                    <h4 className="text-xl font-bold">{currentStep.material?.name}</h4>
+                    <p className="text-sm text-gray-600">{currentStep.material?.code}</p>
                   </div>
                 </div>
 

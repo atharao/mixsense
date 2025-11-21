@@ -5,6 +5,19 @@ import ExcelJS from 'exceljs';
 
 const prisma = new PrismaClient();
 
+// Helper function to calculate if a log is within tolerance
+function isWithinTolerance(log: { actualWeight: any; setpointSnapshot: any; toleranceSnapshot: any }): boolean {
+  const actualWeight = Number(log.actualWeight);
+  const setpoint = Number(log.setpointSnapshot);
+  const tolerance = Number(log.toleranceSnapshot);
+
+  const toleranceRange = (setpoint * tolerance) / 100;
+  const lowerBound = setpoint - toleranceRange;
+  const upperBound = setpoint + toleranceRange;
+
+  return actualWeight >= lowerBound && actualWeight <= upperBound;
+}
+
 export class ReportsService {
   /**
    * Get batch history/reports with filters
@@ -27,16 +40,16 @@ export class ReportsService {
     }
 
     if (filters?.operatorId) {
-      where.operatorId = filters.operatorId;
+      where.operatorUserId = filters.operatorId;
     }
 
     if (filters?.startDate || filters?.endDate) {
-      where.createdAt = {};
+      where.startTime = {};
       if (filters.startDate) {
-        where.createdAt.gte = filters.startDate;
+        where.startTime.gte = filters.startDate;
       }
       if (filters.endDate) {
-        where.createdAt.lte = filters.endDate;
+        where.startTime.lte = filters.endDate;
       }
     }
 
@@ -80,12 +93,12 @@ export class ReportsService {
             material: true,
           },
           orderBy: {
-            createdAt: 'asc',
+            timestamp: 'asc',
           },
         },
       },
       orderBy: {
-        createdAt: 'desc',
+        startTime: 'desc',
       },
     });
 
@@ -131,7 +144,7 @@ export class ReportsService {
             material: true,
           },
           orderBy: {
-            createdAt: 'asc',
+            timestamp: 'asc',
           },
         },
       },
@@ -153,9 +166,9 @@ export class ReportsService {
     doc.text(`Recipe: ${batch.recipe.name}`, 14, 42);
     doc.text(`Operator: ${batch.operator.username}`, 14, 49);
     doc.text(`Status: ${batch.status}`, 14, 56);
-    doc.text(`Started: ${batch.createdAt.toLocaleString()}`, 14, 63);
-    if (batch.completedAt) {
-      doc.text(`Completed: ${batch.completedAt.toLocaleString()}`, 14, 70);
+    doc.text(`Started: ${batch.startTime.toLocaleString()}`, 14, 63);
+    if (batch.endTime) {
+      doc.text(`Completed: ${batch.endTime.toLocaleString()}`, 14, 70);
     }
     if (batch.equipment) {
       doc.text(`Equipment: ${batch.equipment.name}`, 14, 77);
@@ -166,10 +179,10 @@ export class ReportsService {
       log.step.stepOrder,
       log.material.name,
       log.material.code,
-      log.setpointSnapshot.toFixed(2),
-      log.actualWeight.toFixed(2),
+      Number(log.setpointSnapshot).toFixed(2),
+      Number(log.actualWeight).toFixed(2),
       `±${log.toleranceSnapshot}%`,
-      log.withinTolerance ? 'Yes' : 'No',
+      isWithinTolerance(log) ? 'Yes' : 'No',
       log.scannedQrCode || '-',
     ]);
 
@@ -196,7 +209,7 @@ export class ReportsService {
     const finalY = (doc as any).lastAutoTable.finalY || 85;
     doc.setFontSize(10);
     const totalSteps = batch.logs.length;
-    const stepsInTolerance = batch.logs.filter((l) => l.withinTolerance).length;
+    const stepsInTolerance = batch.logs.filter((l) => isWithinTolerance(l)).length;
     const toleranceRate = totalSteps > 0 ? ((stepsInTolerance / totalSteps) * 100).toFixed(1) : '0';
 
     doc.text(`Total Steps: ${totalSteps}`, 14, finalY + 10);
@@ -238,7 +251,7 @@ export class ReportsService {
 
     batches.forEach((batch) => {
       const totalSteps = batch.logs.length;
-      const stepsInTolerance = batch.logs.filter((l) => l.withinTolerance).length;
+      const stepsInTolerance = batch.logs.filter((l) => isWithinTolerance(l)).length;
       const toleranceRate = totalSteps > 0 ? ((stepsInTolerance / totalSteps) * 100).toFixed(1) : '0';
 
       summarySheet.addRow({
@@ -246,8 +259,8 @@ export class ReportsService {
         recipe: batch.recipe.name,
         operator: batch.operator.username,
         status: batch.status,
-        started: batch.createdAt.toLocaleString(),
-        completed: batch.completedAt ? batch.completedAt.toLocaleString() : '-',
+        started: batch.startTime.toLocaleString(),
+        completed: batch.endTime ? batch.endTime.toLocaleString() : '-',
         totalSteps,
         inTolerance: stepsInTolerance,
         toleranceRate: `${toleranceRate}%`,
@@ -278,14 +291,14 @@ export class ReportsService {
       detailSheet.getCell('A4').value = 'Status:';
       detailSheet.getCell('B4').value = batch.status;
       detailSheet.getCell('A5').value = 'Started:';
-      detailSheet.getCell('B5').value = batch.createdAt.toLocaleString();
-      if (batch.completedAt) {
+      detailSheet.getCell('B5').value = batch.startTime.toLocaleString();
+      if (batch.endTime) {
         detailSheet.getCell('A6').value = 'Completed:';
-        detailSheet.getCell('B6').value = batch.completedAt.toLocaleString();
+        detailSheet.getCell('B6').value = batch.endTime.toLocaleString();
       }
 
       // Logs table
-      const startRow = batch.completedAt ? 8 : 7;
+      const startRow = batch.endTime ? 8 : 7;
       detailSheet.getRow(startRow).values = [
         'Step',
         'Material',
@@ -313,9 +326,9 @@ export class ReportsService {
           log.setpointSnapshot,
           log.actualWeight,
           `±${log.toleranceSnapshot}%`,
-          log.withinTolerance ? 'Yes' : 'No',
+          isWithinTolerance(log) ? 'Yes' : 'No',
           log.scannedQrCode || '-',
-          log.createdAt.toLocaleString(),
+          log.timestamp.toLocaleString(),
         ];
 
         // Color code tolerance
@@ -323,7 +336,7 @@ export class ReportsService {
         toleranceCell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: log.withinTolerance ? 'FF90EE90' : 'FFFFCCCB' },
+          fgColor: { argb: isWithinTolerance(log) ? 'FF90EE90' : 'FFFFCCCB' },
         };
       });
 
@@ -364,7 +377,7 @@ export class ReportsService {
 
     batches.forEach((batch) => {
       totalSteps += batch.logs.length;
-      stepsInTolerance += batch.logs.filter((l) => l.withinTolerance).length;
+      stepsInTolerance += batch.logs.filter((l) => isWithinTolerance(l)).length;
     });
 
     const overallToleranceRate = totalSteps > 0 ? ((stepsInTolerance / totalSteps) * 100).toFixed(2) : '0';
@@ -383,7 +396,7 @@ export class ReportsService {
           };
         }
         materialUsage[log.materialId].count++;
-        materialUsage[log.materialId].totalWeight += log.actualWeight;
+        materialUsage[log.materialId].totalWeight += Number(log.actualWeight);
       });
     });
 

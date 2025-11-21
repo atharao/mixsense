@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { Batch, BatchLog, Recipe, RecipeStep } from '../types/models';
+import { Batch, BatchLog, Recipe } from '../types/models';
 
 interface LoadCellData {
   weight: number | null;
@@ -102,7 +102,7 @@ const batchSlice = createSlice({
     addLogEntry: (state, action: PayloadAction<BatchLog>) => {
       state.localHistory.push(action.payload);
     },
-    clearBatchState: (state) => {
+    clearBatchState: (_state) => {
       return initialState;
     },
   },

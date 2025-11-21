@@ -37,13 +37,13 @@ export class ReportsController {
 
       const reports = await reportsService.getBatchReports(filters);
 
-      res.json({
+      return res.json({
         success: true,
         data: reports,
       });
     } catch (error: any) {
       logger.error('Error fetching reports:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: 'Failed to fetch reports',
         error: error.message,
@@ -81,7 +81,7 @@ export class ReportsController {
         });
       }
 
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: 'Failed to generate PDF report',
         error: error.message,
@@ -127,7 +127,7 @@ export class ReportsController {
       res.send(excelBuffer);
     } catch (error: any) {
       logger.error('Error generating Excel report:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: 'Failed to generate Excel report',
         error: error.message,
@@ -163,13 +163,13 @@ export class ReportsController {
 
       const statistics = await reportsService.getAggregatedStatistics(filters);
 
-      res.json({
+      return res.json({
         success: true,
         data: statistics,
       });
     } catch (error: any) {
       logger.error('Error fetching statistics:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: 'Failed to fetch statistics',
         error: error.message,

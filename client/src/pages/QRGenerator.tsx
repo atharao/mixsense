@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { QRCodeCanvas } from 'qrcode.react';
+// import { QRCodeCanvas } from 'qrcode.react';
 import { qrApi } from '../api/qr.api';
 import { recipesApi } from '../api/recipes.api';
 import { materialsApi } from '../api/materials.api';

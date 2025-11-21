@@ -37,13 +37,13 @@ export class BatchesController {
 
       const batches = await batchesService.getAllBatches(filters);
 
-      res.json({
+      return res.json({
         success: true,
         data: batches,
       });
     } catch (error: any) {
       logger.error('Error fetching batches:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: 'Failed to fetch batches',
         error: error.message,
@@ -68,7 +68,7 @@ export class BatchesController {
 
       const batch = await batchesService.getBatchById(id);
 
-      res.json({
+      return res.json({
         success: true,
         data: batch,
       });
@@ -82,7 +82,7 @@ export class BatchesController {
         });
       }
 
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: 'Failed to fetch batch',
         error: error.message,
@@ -97,7 +97,7 @@ export class BatchesController {
   async startBatch(req: Request, res: Response) {
     try {
       const { recipeId, equipmentId } = req.body;
-      const operatorId = req.user!.id; // From auth middleware
+      const operatorId = req.user!.userId; // From auth middleware
 
       // Validation
       if (!recipeId) {
@@ -123,7 +123,7 @@ export class BatchesController {
         equipmentId: equipmentId ? parseInt(equipmentId, 10) : undefined,
       });
 
-      res.status(201).json({
+      return res.status(201).json({
         success: true,
         data: batch,
         message: 'Batch started successfully',
@@ -131,7 +131,7 @@ export class BatchesController {
     } catch (error: any) {
       logger.error('Error starting batch:', error);
 
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: 'Failed to start batch',
         error: error.message,
@@ -201,7 +201,7 @@ export class BatchesController {
         scannedQrCode,
       });
 
-      res.status(201).json({
+      return res.status(201).json({
         success: true,
         data: log,
         message: 'Step logged successfully',
@@ -209,7 +209,7 @@ export class BatchesController {
     } catch (error: any) {
       logger.error(`Error logging step for batch ${req.params.id}:`, error);
 
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: 'Failed to log step',
         error: error.message,
@@ -244,7 +244,7 @@ export class BatchesController {
 
       const batch = await batchesService.endBatch(batchId, { status });
 
-      res.json({
+      return res.json({
         success: true,
         data: batch,
         message: `Batch ${status.toLowerCase()} successfully`,
@@ -266,7 +266,7 @@ export class BatchesController {
         });
       }
 
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: 'Failed to end batch',
         error: error.message,
@@ -280,7 +280,7 @@ export class BatchesController {
    */
   async getActiveBatch(req: Request, res: Response) {
     try {
-      const operatorId = req.user!.id;
+      const operatorId = req.user!.userId;
 
       const batch = await batchesService.getActiveBatch(operatorId);
 
@@ -292,13 +292,13 @@ export class BatchesController {
         });
       }
 
-      res.json({
+      return res.json({
         success: true,
         data: batch,
       });
     } catch (error: any) {
       logger.error('Error fetching active batch:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: 'Failed to fetch active batch',
         error: error.message,
@@ -334,13 +334,13 @@ export class BatchesController {
 
       const statistics = await batchesService.getBatchStatistics(filters);
 
-      res.json({
+      return res.json({
         success: true,
         data: statistics,
       });
     } catch (error: any) {
       logger.error('Error fetching batch statistics:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: 'Failed to fetch batch statistics',
         error: error.message,

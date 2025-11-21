@@ -1,7 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { reportsApi } from '../api/reports.api';
 import { recipesApi } from '../api/recipes.api';
-import { Batch, Recipe } from '../types/models';
+import { Batch, Recipe, BatchLog } from '../types/models';
+
+// Helper function to calculate if a log is within tolerance
+const isWithinTolerance = (log: BatchLog): boolean => {
+  const actualWeight = Number(log.actualWeight);
+  const setpoint = Number(log.setpointSnapshot);
+  const tolerance = Number(log.toleranceSnapshot);
+
+  const toleranceRange = (setpoint * tolerance) / 100;
+  const lowerBound = setpoint - toleranceRange;
+  const upperBound = setpoint + toleranceRange;
+
+  return actualWeight >= lowerBound && actualWeight <= upperBound;
+};
 
 const Reports: React.FC = () => {
   const [batches, setBatches] = useState<Batch[]>([]);
@@ -201,17 +214,17 @@ const Reports: React.FC = () => {
                 {batches.map((batch) => (
                   <tr key={batch.id}>
                     <td className="font-mono font-semibold">#{batch.id}</td>
-                    <td>{batch.recipe.name}</td>
-                    <td>{batch.operator.username}</td>
+                    <td>{batch.recipe?.name}</td>
+                    <td>{batch.operator?.username}</td>
                     <td>
                       <span className={getStatusBadgeClass(batch.status)}>{batch.status}</span>
                     </td>
                     <td className="text-sm text-gray-500">
-                      {new Date(batch.createdAt).toLocaleString()}
+                      {new Date(batch.startTime).toLocaleString()}
                     </td>
                     <td className="text-sm text-gray-500">
-                      {batch.completedAt
-                        ? new Date(batch.completedAt).toLocaleString()
+                      {batch.endTime
+                        ? new Date(batch.endTime).toLocaleString()
                         : '-'}
                     </td>
                     <td className="text-center">{batch.logs?.length || 0}</td>
@@ -247,7 +260,7 @@ const Reports: React.FC = () => {
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h3 className="text-2xl font-bold">Batch #{selectedBatch.id}</h3>
-                  <p className="text-gray-500">{selectedBatch.recipe.name}</p>
+                  <p className="text-gray-500">{selectedBatch.recipe?.name}</p>
                 </div>
                 <span className={`${getStatusBadgeClass(selectedBatch.status)} text-lg`}>
                   {selectedBatch.status}
@@ -258,19 +271,19 @@ const Reports: React.FC = () => {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <div>
                   <p className="text-sm text-gray-500">Operator</p>
-                  <p className="font-semibold">{selectedBatch.operator.username}</p>
+                  <p className="font-semibold">{selectedBatch.operator?.username}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Started</p>
                   <p className="font-semibold text-sm">
-                    {new Date(selectedBatch.createdAt).toLocaleString()}
+                    {new Date(selectedBatch.startTime).toLocaleString()}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Completed</p>
                   <p className="font-semibold text-sm">
-                    {selectedBatch.completedAt
-                      ? new Date(selectedBatch.completedAt).toLocaleString()
+                    {selectedBatch.endTime
+                      ? new Date(selectedBatch.endTime).toLocaleString()
                       : '-'}
                   </p>
                 </div>
@@ -301,13 +314,13 @@ const Reports: React.FC = () => {
                     <tbody>
                       {selectedBatch.logs?.map((log) => (
                         <tr key={log.id}>
-                          <td className="font-semibold">{log.step.stepOrder}</td>
-                          <td>{log.material.name}</td>
-                          <td className="font-mono text-sm">{log.material.code}</td>
+                          <td className="font-semibold">{log.step?.stepOrder}</td>
+                          <td>{log.material?.name}</td>
+                          <td className="font-mono text-sm">{log.material?.code}</td>
                           <td>{log.setpointSnapshot.toFixed(2)}g</td>
                           <td
                             className={
-                              log.withinTolerance
+                              isWithinTolerance(log)
                                 ? 'text-success-600 font-semibold'
                                 : 'text-danger-600 font-semibold'
                             }
@@ -316,7 +329,7 @@ const Reports: React.FC = () => {
                           </td>
                           <td>±{log.toleranceSnapshot}%</td>
                           <td>
-                            {log.withinTolerance ? (
+                            {isWithinTolerance(log) ? (
                               <span className="badge-success">✓ Yes</span>
                             ) : (
                               <span className="badge-danger">✗ No</span>
@@ -324,7 +337,7 @@ const Reports: React.FC = () => {
                           </td>
                           <td className="text-xs font-mono">{log.scannedQrCode || '-'}</td>
                           <td className="text-sm text-gray-500">
-                            {new Date(log.createdAt).toLocaleTimeString()}
+                            {new Date(log.timestamp).toLocaleTimeString()}
                           </td>
                         </tr>
                       ))}
@@ -344,7 +357,7 @@ const Reports: React.FC = () => {
                   <div>
                     <p className="text-sm text-gray-500">In Tolerance</p>
                     <p className="text-2xl font-bold text-success-600">
-                      {selectedBatch.logs?.filter((l) => l.withinTolerance).length || 0}
+                      {selectedBatch.logs?.filter((l) => isWithinTolerance(l)).length || 0}
                     </p>
                   </div>
                   <div>
@@ -352,7 +365,7 @@ const Reports: React.FC = () => {
                     <p className="text-2xl font-bold text-primary-600">
                       {selectedBatch.logs && selectedBatch.logs.length > 0
                         ? (
-                            (selectedBatch.logs.filter((l) => l.withinTolerance).length /
+                            (selectedBatch.logs.filter((l) => isWithinTolerance(l)).length /
                               selectedBatch.logs.length) *
                             100
                           ).toFixed(1)

@@ -27,7 +27,7 @@ export const useQrScanner = (config: QRScannerConfig = DEFAULT_CONFIG) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const scanIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const scanIntervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onScanRef = useRef<((data: string) => void) | null>(null);
 
   /**

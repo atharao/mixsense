@@ -5,7 +5,7 @@ import { setRecipes, setSelectedRecipe, addRecipe, updateRecipe, deleteRecipe, s
 import { setMaterials } from '../store/materialsSlice';
 import { recipesApi } from '../api/recipes.api';
 import { materialsApi } from '../api/materials.api';
-import { Recipe, RecipeStep } from '../types/models';
+import { Recipe } from '../types/models';
 
 interface StepForm {
   materialId: number;
@@ -17,7 +17,7 @@ interface StepForm {
 
 const Recipes: React.FC = () => {
   const dispatch = useDispatch();
-  const { recipes, selectedRecipe, loading } = useSelector((state: RootState) => state.recipes);
+  const { recipes, selectedRecipe, loading: _loading } = useSelector((state: RootState) => state.recipes);
   const { ingredients, equipment } = useSelector((state: RootState) => state.materials);
 
   const [showModal, setShowModal] = useState(false);
@@ -244,7 +244,7 @@ const Recipes: React.FC = () => {
                   <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded mr-2">
                     {step.stepOrder}
                   </span>
-                  <span className="truncate">{step.material.name}</span>
+                  <span className="truncate">{step.material?.name}</span>
                 </div>
               ))}
               {(recipe.steps?.length || 0) > 3 && (
@@ -301,8 +301,8 @@ const Recipes: React.FC = () => {
                           <span className="w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center font-bold">
                             {step.stepOrder}
                           </span>
-                          <h4 className="text-lg font-semibold">{step.material.name}</h4>
-                          <span className="text-sm text-gray-500">({step.material.code})</span>
+                          <h4 className="text-lg font-semibold">{step.material?.name}</h4>
+                          <span className="text-sm text-gray-500">({step.material?.code})</span>
                         </div>
 
                         <div className="ml-11 space-y-1">

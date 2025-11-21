@@ -36,7 +36,7 @@ export const useLoadCell = (config: LoadCellConfig = DEFAULT_CONFIG) => {
   const readerRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null);
   const decoderRef = useRef(new TextDecoder());
   const bufferRef = useRef('');
-  const stabilityCheckRef = useRef<NodeJS.Timeout | null>(null);
+  const stabilityCheckRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const previousWeightRef = useRef<number | null>(null);
   const stabilityCountRef = useRef(0);
 
@@ -176,7 +176,7 @@ export const useLoadCell = (config: LoadCellConfig = DEFAULT_CONFIG) => {
 
       // Open the port with configuration
       await port.open({
-        baudRate: config.baudRate || DEFAULT_CONFIG.baudRate,
+        baudRate: (config.baudRate || DEFAULT_CONFIG.baudRate) as number,
         dataBits: config.dataBits || DEFAULT_CONFIG.dataBits,
         stopBits: config.stopBits || DEFAULT_CONFIG.stopBits,
         parity: config.parity || DEFAULT_CONFIG.parity,

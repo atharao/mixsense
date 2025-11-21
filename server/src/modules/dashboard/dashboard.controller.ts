@@ -9,17 +9,17 @@ export class DashboardController {
    * GET /api/dashboard/overview
    * Get dashboard overview statistics
    */
-  async getOverview(req: Request, res: Response) {
+  async getOverview(_req: Request, res: Response) {
     try {
       const overview = await dashboardService.getDashboardOverview();
 
-      res.json({
+      return res.json({
         success: true,
         data: overview,
       });
     } catch (error: any) {
       logger.error('Error fetching dashboard overview:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: 'Failed to fetch dashboard overview',
         error: error.message,
@@ -31,17 +31,17 @@ export class DashboardController {
    * GET /api/dashboard/equipment
    * Get equipment status
    */
-  async getEquipmentStatus(req: Request, res: Response) {
+  async getEquipmentStatus(_req: Request, res: Response) {
     try {
       const equipmentStatus = await dashboardService.getEquipmentStatus();
 
-      res.json({
+      return res.json({
         success: true,
         data: equipmentStatus,
       });
     } catch (error: any) {
       logger.error('Error fetching equipment status:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: 'Failed to fetch equipment status',
         error: error.message,
@@ -66,13 +66,13 @@ export class DashboardController {
 
       const trends = await dashboardService.getBatchTrends(days);
 
-      res.json({
+      return res.json({
         success: true,
         data: trends,
       });
     } catch (error: any) {
       logger.error('Error fetching batch trends:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: 'Failed to fetch batch trends',
         error: error.message,
@@ -97,13 +97,13 @@ export class DashboardController {
 
       const materialUsage = await dashboardService.getMaterialUsage(limit);
 
-      res.json({
+      return res.json({
         success: true,
         data: materialUsage,
       });
     } catch (error: any) {
       logger.error('Error fetching material usage:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: 'Failed to fetch material usage',
         error: error.message,
@@ -115,17 +115,17 @@ export class DashboardController {
    * GET /api/dashboard/operators
    * Get operator performance
    */
-  async getOperatorPerformance(req: Request, res: Response) {
+  async getOperatorPerformance(_req: Request, res: Response) {
     try {
       const operatorPerformance = await dashboardService.getOperatorPerformance();
 
-      res.json({
+      return res.json({
         success: true,
         data: operatorPerformance,
       });
     } catch (error: any) {
       logger.error('Error fetching operator performance:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: 'Failed to fetch operator performance',
         error: error.message,
@@ -150,13 +150,13 @@ export class DashboardController {
 
       const alerts = await dashboardService.getRecentAlerts(limit);
 
-      res.json({
+      return res.json({
         success: true,
         data: alerts,
       });
     } catch (error: any) {
       logger.error('Error fetching alerts:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: 'Failed to fetch alerts',
         error: error.message,
