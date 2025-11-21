@@ -1,0 +1,149 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// User model for authentication and authorization
+model User {
+  id            Int        @id @default(autoincrement())
+  username      String     @unique @db.VarChar(50)
+  passwordHash  String     @map("password_hash") @db.VarChar(255)
+  role          Role
+  createdAt     DateTime   @default(now()) @map("created_at")
+
+  // Relations
+  materials     Material[] @relation("CreatedMaterials")
+  recipes       Recipe[]   @relation("CreatedRecipes")
+  batches       Batch[]    @relation("OperatorBatches")
+
+  @@map("users")
+}
+
+enum Role {
+  ADMIN
+  OPERATOR
+}
+
+// Material model for ingredients and equipment
+model Material {
+  id               Int           @id @default(autoincrement())
+  name             String        @db.VarChar(100)
+  code             String        @unique @db.VarChar(50)
+  type             MaterialType
+  createdByUserId  Int           @map("created_by_user_id")
+  createdAt        DateTime      @default(now()) @map("created_at")
+
+  // Relations
+  createdBy        User          @relation("CreatedMaterials", fields: [createdByUserId], references: [id])
+  recipeSteps      RecipeStep[]  @relation("StepMaterial")
+  equipmentSteps   RecipeStep[]  @relation("StepEquipment")
+  batchLogs        BatchLog[]
+  batches          Batch[]       @relation("BatchEquipment")
+
+  @@index([createdByUserId])
+  @@index([type])
+  @@map("materials")
+}
+
+enum MaterialType {
+  INGREDIENT
+  EQUIPMENT
+}
+
+// Recipe model for defining mixing procedures
+model Recipe {
+  id               Int           @id @default(autoincrement())
+  name             String        @db.VarChar(100)
+  createdByUserId  Int           @map("created_by_user_id")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  deletedAt        DateTime?     @map("deleted_at")
+
+  // Relations
+  createdBy        User          @relation("CreatedRecipes", fields: [createdByUserId], references: [id])
+  steps            RecipeStep[]
+  batches          Batch[]
+
+  @@index([createdByUserId])
+  @@index([deletedAt])
+  @@map("recipes")
+}
+
+// RecipeStep model for individual steps in a recipe
+model RecipeStep {
+  id                Int           @id @default(autoincrement())
+  recipeId          Int           @map("recipe_id")
+  materialId        Int           @map("material_id")
+  equipmentId       Int?          @map("equipment_id")
+  stepOrder         Int           @map("step_order")
+  setpoint          Decimal       @db.Decimal(10, 3)
+  tolerancePercent  Decimal       @map("tolerance_percent") @db.Decimal(5, 2)
+
+  // Relations
+  recipe            Recipe        @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  material          Material      @relation("StepMaterial", fields: [materialId], references: [id])
+  equipment         Material?     @relation("StepEquipment", fields: [equipmentId], references: [id])
+  batchLogs         BatchLog[]
+
+  @@index([recipeId])
+  @@index([materialId])
+  @@index([equipmentId])
+  @@map("recipe_steps")
+}
+
+// Batch model for tracking batch execution
+model Batch {
+  id               Int           @id @default(autoincrement())
+  recipeId         Int           @map("recipe_id")
+  operatorUserId   Int           @map("operator_user_id")
+  equipmentId      Int?          @map("equipment_id")
+  startTime        DateTime      @map("start_time")
+  endTime          DateTime?     @map("end_time")
+  status           BatchStatus
+
+  // Relations
+  recipe           Recipe        @relation(fields: [recipeId], references: [id])
+  operator         User          @relation("OperatorBatches", fields: [operatorUserId], references: [id])
+  equipment        Material?     @relation("BatchEquipment", fields: [equipmentId], references: [id])
+  logs             BatchLog[]
+
+  @@index([recipeId])
+  @@index([operatorUserId])
+  @@index([equipmentId])
+  @@index([status])
+  @@map("batches")
+}
+
+enum BatchStatus {
+  IN_PROGRESS
+  COMPLETED
+  ABORTED
+}
+
+// BatchLog model for logging each step execution
+model BatchLog {
+  id                  Int           @id @default(autoincrement())
+  batchId             Int           @map("batch_id")
+  stepId              Int           @map("step_id")
+  materialId          Int           @map("material_id")
+  actualWeight        Decimal       @map("actual_weight") @db.Decimal(10, 3)
+  setpointSnapshot    Decimal       @map("setpoint_snapshot") @db.Decimal(10, 3)
+  toleranceSnapshot   Decimal       @map("tolerance_snapshot") @db.Decimal(5, 2)
+  scannedQrCode       String?       @map("scanned_qr_code") @db.Text
+  timestamp           DateTime      @default(now())
+
+  // Relations
+  batch               Batch         @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  step                RecipeStep    @relation(fields: [stepId], references: [id])
+  material            Material      @relation(fields: [materialId], references: [id])
+
+  @@index([batchId])
+  @@index([stepId])
+  @@index([materialId])
+  @@map("batch_logs")
+}
