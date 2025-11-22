@@ -19,6 +19,9 @@ const Recipes: React.FC = () => {
   const dispatch = useDispatch();
   const { recipes, selectedRecipe, loading: _loading } = useSelector((state: RootState) => state.recipes);
   const { ingredients, equipment } = useSelector((state: RootState) => state.materials);
+  const { user } = useSelector((state: RootState) => state.auth);
+
+  const isAdmin = user?.role === 'ADMIN';
 
   const [showModal, setShowModal] = useState(false);
   const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
@@ -213,9 +216,11 @@ const Recipes: React.FC = () => {
           <h2 className="text-2xl font-bold">Recipes</h2>
           <p className="text-gray-500">Manage mixing recipes and formulas</p>
         </div>
-        <button onClick={() => handleOpenModal()} className="btn-primary">
-          + Create Recipe
-        </button>
+        {isAdmin && (
+          <button onClick={() => handleOpenModal()} className="btn-primary">
+            + Create Recipe
+          </button>
+        )}
       </div>
 
       {/* Search */}
@@ -259,18 +264,22 @@ const Recipes: React.FC = () => {
               >
                 View
               </button>
-              <button
-                onClick={() => handleOpenModal(recipe)}
-                className="flex-1 px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
-              >
-                Edit
-              </button>
-              <button
-                onClick={() => handleDelete(recipe.id, recipe.name)}
-                className="px-3 py-2 text-sm bg-danger-100 text-danger-700 rounded hover:bg-danger-200"
-              >
-                Delete
-              </button>
+              {isAdmin && (
+                <>
+                  <button
+                    onClick={() => handleOpenModal(recipe)}
+                    className="flex-1 px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(recipe.id, recipe.name)}
+                    className="px-3 py-2 text-sm bg-danger-100 text-danger-700 rounded hover:bg-danger-200"
+                  >
+                    Delete
+                  </button>
+                </>
+              )}
             </div>
           </div>
         ))}
@@ -279,9 +288,11 @@ const Recipes: React.FC = () => {
       {filteredRecipes.length === 0 && (
         <div className="card text-center py-12">
           <p className="text-gray-500 mb-4">No recipes found</p>
-          <button onClick={() => handleOpenModal()} className="btn-primary">
-            Create First Recipe
-          </button>
+          {isAdmin && (
+            <button onClick={() => handleOpenModal()} className="btn-primary">
+              Create First Recipe
+            </button>
+          )}
         </div>
       )}
 
@@ -338,15 +349,17 @@ const Recipes: React.FC = () => {
                 >
                   Close
                 </button>
-                <button
-                  onClick={() => {
-                    handleOpenModal(selectedRecipe);
-                    dispatch(setSelectedRecipe(null));
-                  }}
-                  className="btn-primary"
-                >
-                  Edit Recipe
-                </button>
+                {isAdmin && (
+                  <button
+                    onClick={() => {
+                      handleOpenModal(selectedRecipe);
+                      dispatch(setSelectedRecipe(null));
+                    }}
+                    className="btn-primary"
+                  >
+                    Edit Recipe
+                  </button>
+                )}
               </div>
             </div>
           </div>

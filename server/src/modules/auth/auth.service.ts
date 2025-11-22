@@ -131,4 +131,81 @@ export class AuthService {
 
     logger.info(`Password changed successfully for user: ${user.username}`);
   }
+
+  async getAllUsers() {
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        username: true,
+        role: true,
+        createdAt: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return users;
+  }
+
+  async deleteUser(userId: number): Promise<void> {
+    // Check if user exists
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // Delete user
+    await prisma.user.delete({
+      where: { id: userId },
+    });
+
+    logger.info(`User deleted successfully: ${user.username}`);
+  }
+
+  async updateUser(
+    userId: number,
+    data: { username?: string; role?: 'ADMIN' | 'OPERATOR'; password?: string }
+  ): Promise<{ id: number; username: string; role: string }> {
+    // Check if user exists
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // Prepare update data
+    const updateData: any = {};
+
+    if (data.username) {
+      updateData.username = data.username;
+    }
+
+    if (data.role) {
+      updateData.role = data.role;
+    }
+
+    if (data.password) {
+      updateData.passwordHash = await bcrypt.hash(data.password, SALT_ROUNDS);
+    }
+
+    // Update user
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+    });
+
+    logger.info(`User updated successfully: ${updatedUser.username}`);
+
+    return {
+      id: updatedUser.id,
+      username: updatedUser.username,
+      role: updatedUser.role,
+    };
+  }
 }

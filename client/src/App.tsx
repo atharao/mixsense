@@ -2,29 +2,14 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { useSelector } from 'react-redux';
 import { RootState } from './store';
 import Layout from './components/Layout';
+import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Materials from './pages/Materials';
 import Recipes from './pages/Recipes';
 import RunBatch from './pages/RunBatch';
 import Reports from './pages/Reports';
 import QRGenerator from './pages/QRGenerator';
-
-// Login Page Component
-const LoginPage = () => <div className="flex items-center justify-center h-screen bg-gray-100">
-  <div className="card max-w-md w-full mx-4">
-    <h1 className="text-4xl font-bold text-primary-600 mb-2 text-center">MixSense</h1>
-    <p className="text-gray-600 text-center mb-6">Mixing Control System</p>
-    <div className="bg-warning-50 border border-warning-200 rounded-lg p-4">
-      <p className="text-sm text-warning-800">
-        <strong>Note:</strong> The full authentication system is implemented in the backend.
-        This login page UI will be completed in the next phase with form handling and validation.
-      </p>
-      <p className="text-sm text-warning-800 mt-2">
-        For testing, you can use the backend API directly at <code className="bg-warning-100 px-2 py-1 rounded">POST /api/auth/login</code>
-      </p>
-    </div>
-  </div>
-</div>;
+import UserManagement from './pages/UserManagement';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -57,7 +42,7 @@ function App() {
     <Router>
       <Routes>
         {/* Public routes */}
-        <Route path="/login" element={<LoginPage />} />
+        <Route path="/login" element={<Login />} />
 
         {/* Protected routes */}
         <Route
@@ -110,6 +95,15 @@ function App() {
           element={
             <AdminRoute>
               <QRGenerator />
+            </AdminRoute>
+          }
+        />
+
+        <Route
+          path="/users"
+          element={
+            <AdminRoute>
+              <UserManagement />
             </AdminRoute>
           }
         />

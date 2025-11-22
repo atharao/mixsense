@@ -13,7 +13,10 @@ router.post('/logout', authController.logout);
 router.get('/me', auth, authController.me);
 router.post('/change-password', auth, authController.changePassword);
 
-// Admin only - create new users
+// Admin only - user management
+router.get('/users', auth, requireAdmin, authController.getAllUsers);
 router.post('/users', auth, requireAdmin, authController.createUser);
+router.put('/users/:id', auth, requireAdmin, authController.updateUser);
+router.delete('/users/:id', auth, requireAdmin, authController.deleteUser);
 
 export default router;

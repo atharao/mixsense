@@ -29,6 +29,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { path: '/recipes', label: 'Recipes', icon: '📖', allowedRoles: ['ADMIN', 'OPERATOR'] },
     { path: '/materials', label: 'Materials', icon: '📦', allowedRoles: ['ADMIN'] },
     { path: '/reports', label: 'Reports', icon: '📈', allowedRoles: ['ADMIN', 'OPERATOR'] },
+    { path: '/users', label: 'Users', icon: '👥', allowedRoles: ['ADMIN'] },
     { path: '/qr-generator', label: 'QR Generator', icon: '📱', allowedRoles: ['ADMIN'] },
   ];
 
