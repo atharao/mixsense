@@ -26,17 +26,30 @@ const Recipes: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [recipeName, setRecipeName] = useState('');
   const [steps, setSteps] = useState<StepForm[]>([]);
 
   useEffect(() => {
     loadData();
-  }, []);
 
-  const loadData = async () => {
+    // Auto-refresh every 30 seconds for operators
+    if (!isAdmin) {
+      const interval = setInterval(() => {
+        loadData(true);
+      }, 30000);
+
+      return () => clearInterval(interval);
+    }
+  }, [isAdmin]);
+
+  const loadData = async (silent = false) => {
     try {
-      dispatch(setLoading(true));
+      if (!silent) {
+        dispatch(setLoading(true));
+      }
+      setIsRefreshing(true);
       const [recipesRes, materialsRes] = await Promise.all([
         recipesApi.getAll(),
         materialsApi.getAll(),
@@ -45,7 +58,13 @@ const Recipes: React.FC = () => {
       dispatch(setMaterials(materialsRes.data.data || []));
     } catch (error) {
       console.error('Error loading data:', error);
+    } finally {
+      setIsRefreshing(false);
     }
+  };
+
+  const handleRefresh = () => {
+    loadData();
   };
 
   const handleOpenModal = (recipe?: Recipe) => {
@@ -216,11 +235,21 @@ const Recipes: React.FC = () => {
           <h2 className="text-2xl font-bold">Recipes</h2>
           <p className="text-gray-500">Manage mixing recipes and formulas</p>
         </div>
-        {isAdmin && (
-          <button onClick={() => handleOpenModal()} className="btn-primary">
-            + Create Recipe
+        <div className="flex gap-3">
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50"
+            title="Refresh recipes"
+          >
+            {isRefreshing ? '↻ Refreshing...' : '↻ Refresh'}
           </button>
-        )}
+          {isAdmin && (
+            <button onClick={() => handleOpenModal()} className="btn-primary">
+              + Create Recipe
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Search */}

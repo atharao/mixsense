@@ -1,6 +1,37 @@
-import { PrismaClient, BatchStatus } from '@prisma/client';
+import { PrismaClient, BatchStatus, RecipeStep, Material } from '@prisma/client';
 
 const prisma = new PrismaClient();
+
+// Helper function to transform recipe steps and convert Decimal to number
+function transformRecipeSteps(steps: (RecipeStep & { material?: Material; equipment?: Material | null })[]) {
+  return steps.map(step => ({
+    ...step,
+    setpoint: Number(step.setpoint),
+    tolerancePercent: Number(step.tolerancePercent),
+  }));
+}
+
+// Helper function to transform batch data and convert Decimal to number
+function transformBatch(batch: any) {
+  return {
+    ...batch,
+    recipe: batch.recipe ? {
+      ...batch.recipe,
+      steps: batch.recipe.steps ? transformRecipeSteps(batch.recipe.steps) : [],
+    } : undefined,
+    logs: batch.logs?.map((log: any) => ({
+      ...log,
+      actualWeight: Number(log.actualWeight),
+      setpointSnapshot: Number(log.setpointSnapshot),
+      toleranceSnapshot: Number(log.toleranceSnapshot),
+      step: log.step ? {
+        ...log.step,
+        setpoint: Number(log.step.setpoint),
+        tolerancePercent: Number(log.step.tolerancePercent),
+      } : undefined,
+    })),
+  };
+}
 
 export class BatchesService {
   /**
@@ -37,7 +68,7 @@ export class BatchesService {
       }
     }
 
-    return await prisma.batch.findMany({
+    const batches = await prisma.batch.findMany({
       where,
       include: {
         recipe: {
@@ -77,6 +108,8 @@ export class BatchesService {
         startTime: 'desc',
       },
     });
+
+    return batches.map(transformBatch);
   }
 
   /**
@@ -128,7 +161,7 @@ export class BatchesService {
       throw new Error('Batch not found');
     }
 
-    return batch;
+    return transformBatch(batch);
   }
 
   /**
@@ -209,7 +242,7 @@ export class BatchesService {
       },
     });
 
-    return batch;
+    return transformBatch(batch);
   }
 
   /**
@@ -294,7 +327,17 @@ export class BatchesService {
       },
     });
 
-    return log;
+    return {
+      ...log,
+      actualWeight: Number(log.actualWeight),
+      setpointSnapshot: Number(log.setpointSnapshot),
+      toleranceSnapshot: Number(log.toleranceSnapshot),
+      step: log.step ? {
+        ...log.step,
+        setpoint: Number(log.step.setpoint),
+        tolerancePercent: Number(log.step.tolerancePercent),
+      } : undefined,
+    };
   }
 
   /**
@@ -382,7 +425,7 @@ export class BatchesService {
       },
     });
 
-    return updatedBatch;
+    return transformBatch(updatedBatch);
   }
 
   /**
@@ -433,7 +476,7 @@ export class BatchesService {
       },
     });
 
-    return batch;
+    return batch ? transformBatch(batch) : null;
   }
 
   /**

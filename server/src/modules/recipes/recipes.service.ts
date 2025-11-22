@@ -1,13 +1,25 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, RecipeStep, Material } from '@prisma/client';
 
 const prisma = new PrismaClient();
+
+// Helper function to transform recipe data and convert Decimal to number
+function transformRecipe(recipe: any) {
+  return {
+    ...recipe,
+    steps: recipe.steps?.map((step: RecipeStep & { material?: Material; equipment?: Material | null }) => ({
+      ...step,
+      setpoint: Number(step.setpoint),
+      tolerancePercent: Number(step.tolerancePercent),
+    })),
+  };
+}
 
 export class RecipesService {
   /**
    * Get all recipes with their steps
    */
   async getAllRecipes() {
-    return await prisma.recipe.findMany({
+    const recipes = await prisma.recipe.findMany({
       include: {
         steps: {
           include: {
@@ -23,6 +35,8 @@ export class RecipesService {
         createdAt: 'desc',
       },
     });
+
+    return recipes.map(transformRecipe);
   }
 
   /**
@@ -48,7 +62,7 @@ export class RecipesService {
       throw new Error('Recipe not found');
     }
 
-    return recipe;
+    return transformRecipe(recipe);
   }
 
   /**
@@ -123,7 +137,7 @@ export class RecipesService {
       },
     });
 
-    return recipe;
+    return transformRecipe(recipe);
   }
 
   /**
@@ -232,7 +246,7 @@ export class RecipesService {
       });
     });
 
-    return recipe;
+    return transformRecipe(recipe!);
   }
 
   /**
