@@ -83,6 +83,7 @@ model RecipeStep {
   stepOrder         Int           @map("step_order")
   setpoint          Decimal       @db.Decimal(10, 3)
   tolerancePercent  Decimal       @map("tolerance_percent") @db.Decimal(5, 2)
+  qrCode            String?       @map("qr_code") @db.Text
 
   // Relations
   recipe            Recipe        @relation(fields: [recipeId], references: [id], onDelete: Cascade)

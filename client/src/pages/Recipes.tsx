@@ -67,6 +67,86 @@ const Recipes: React.FC = () => {
     loadData();
   };
 
+  const handleDownloadQR = (stepOrder: number, materialName: string, qrCode: string) => {
+    // Create a download link for the QR code
+    const link = document.createElement('a');
+    link.href = qrCode;
+    link.download = `QR_Step${stepOrder}_${materialName.replace(/\s+/g, '_')}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handlePrintQR = (stepOrder: number, materialName: string, qrCode: string, setpoint: number, tolerancePercent: number) => {
+    // Create a new window for printing
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Please allow popups to print QR codes');
+      return;
+    }
+
+    const toleranceRange = (setpoint * tolerancePercent) / 100;
+    const lowerBound = (setpoint - toleranceRange).toFixed(2);
+    const upperBound = (setpoint + toleranceRange).toFixed(2);
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>QR Code - Step ${stepOrder}</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              padding: 20px;
+              text-align: center;
+            }
+            .qr-container {
+              border: 2px solid #000;
+              padding: 20px;
+              display: inline-block;
+              margin: 20px;
+            }
+            img {
+              display: block;
+              margin: 0 auto;
+            }
+            h2 {
+              margin: 10px 0;
+            }
+            .details {
+              margin-top: 15px;
+              text-align: left;
+              font-size: 14px;
+            }
+            .details p {
+              margin: 5px 0;
+            }
+            @media print {
+              button {
+                display: none;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="qr-container">
+            <h2>Step ${stepOrder}: ${materialName}</h2>
+            <img src="${qrCode}" alt="QR Code" />
+            <div class="details">
+              <p><strong>Setpoint:</strong> ${setpoint}g</p>
+              <p><strong>Tolerance:</strong> ±${tolerancePercent}%</p>
+              <p><strong>Range:</strong> ${lowerBound}g - ${upperBound}g</p>
+            </div>
+          </div>
+          <br/>
+          <button onclick="window.print()">Print</button>
+          <button onclick="window.close()">Close</button>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   const handleOpenModal = (recipe?: Recipe) => {
     if (recipe) {
       setEditingRecipe(recipe);
@@ -335,7 +415,7 @@ const Recipes: React.FC = () => {
               <div className="space-y-4">
                 {selectedRecipe.steps?.map((step) => (
                   <div key={step.id} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-start justify-between">
+                    <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
                           <span className="w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center font-bold">
@@ -366,6 +446,33 @@ const Recipes: React.FC = () => {
                           )}
                         </div>
                       </div>
+
+                      {/* QR Code Section */}
+                      {step.qrCode && (
+                        <div className="flex flex-col items-center gap-2">
+                          <img
+                            src={step.qrCode}
+                            alt={`QR Code for ${step.material?.name}`}
+                            className="w-32 h-32 border border-gray-300 rounded"
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleDownloadQR(step.stepOrder, step.material?.name || '', step.qrCode!)}
+                              className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                              title="Download QR Code"
+                            >
+                              📥 Download
+                            </button>
+                            <button
+                              onClick={() => handlePrintQR(step.stepOrder, step.material?.name || '', step.qrCode!, step.setpoint, step.tolerancePercent)}
+                              className="px-3 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200"
+                              title="Print QR Code"
+                            >
+                              🖨 Print
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}

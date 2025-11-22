@@ -1,6 +1,8 @@
 import { PrismaClient, RecipeStep, Material } from '@prisma/client';
+import { QRService } from '../qr/qr.service';
 
 const prisma = new PrismaClient();
+const qrService = new QRService();
 
 // Helper function to transform recipe data and convert Decimal to number
 function transformRecipe(recipe: any) {
@@ -137,7 +139,26 @@ export class RecipesService {
       },
     });
 
-    return transformRecipe(recipe);
+    // Generate QR codes for each step
+    await this.generateQRCodesForSteps(recipe.steps);
+
+    // Fetch updated recipe with QR codes
+    const updatedRecipe = await prisma.recipe.findUnique({
+      where: { id: recipe.id },
+      include: {
+        steps: {
+          include: {
+            material: true,
+            equipment: true,
+          },
+          orderBy: {
+            stepOrder: 'asc',
+          },
+        },
+      },
+    });
+
+    return transformRecipe(updatedRecipe!);
   }
 
   /**
@@ -246,6 +267,29 @@ export class RecipesService {
       });
     });
 
+    // If steps were updated, regenerate QR codes
+    if (data.steps && recipe!.steps) {
+      await this.generateQRCodesForSteps(recipe!.steps);
+
+      // Fetch again to get updated QR codes
+      const updatedRecipe = await prisma.recipe.findUnique({
+        where: { id },
+        include: {
+          steps: {
+            include: {
+              material: true,
+              equipment: true,
+            },
+            orderBy: {
+              stepOrder: 'asc',
+            },
+          },
+        },
+      });
+
+      return transformRecipe(updatedRecipe!);
+    }
+
     return transformRecipe(recipe!);
   }
 
@@ -277,5 +321,29 @@ export class RecipesService {
     });
 
     return { success: true };
+  }
+
+  /**
+   * Generate QR codes for recipe steps
+   */
+  private async generateQRCodesForSteps(steps: any[]): Promise<void> {
+    await Promise.all(
+      steps.map(async (step) => {
+        // Generate QR code for this step
+        const { qrCodeImage } = await qrService.generateQRCode({
+          materialCode: step.material.code,
+          materialName: step.material.name,
+          setpoint: Number(step.setpoint),
+          actualValue: Number(step.setpoint), // Use setpoint as default for recipe QR codes
+          equipment: step.equipment?.name || 'Any',
+        });
+
+        // Update step with QR code
+        await prisma.recipeStep.update({
+          where: { id: step.id },
+          data: { qrCode: qrCodeImage },
+        });
+      })
+    );
   }
 }
