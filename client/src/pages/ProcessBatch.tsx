@@ -93,6 +93,11 @@ const ProcessBatch: React.FC = () => {
     const currentStep = processBatch.currentRecipe.steps[processBatch.currentStepIndex];
     if (!currentStep) return;
 
+    if (currentWeight === null) {
+      alert('No weight data available');
+      return;
+    }
+
     // Check if weight is within tolerance
     const setpoint = currentStep.setpoint;
     const tolerance = currentStep.tolerancePercent;
@@ -204,14 +209,13 @@ const ProcessBatch: React.FC = () => {
   };
 
   const currentStep = processBatch.currentRecipe?.steps[processBatch.currentStepIndex];
-  const isLastStep = processBatch.currentStepIndex === processBatch.currentRecipe?.steps.length - 1;
   const allStepsProcessed = processBatch.processedSteps.size === processBatch.currentRecipe?.steps.length;
 
   // Calculate tolerance values for current step
   let withinTolerance = false;
   let lowerBound = 0;
   let upperBound = 0;
-  if (currentStep) {
+  if (currentStep && currentWeight !== null) {
     const setpoint = currentStep.setpoint;
     const tolerance = currentStep.tolerancePercent;
     const toleranceRange = (setpoint * tolerance) / 100;
@@ -251,7 +255,7 @@ const ProcessBatch: React.FC = () => {
               <div className="flex items-center gap-2">
                 <span className="font-semibold">Weight:</span>
                 <span className={`px-3 py-1 rounded ${isStable ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                  {currentWeight.toFixed(3)}g {isStable && '(Stable)'}
+                  {currentWeight !== null ? currentWeight.toFixed(3) : '0.000'}g {isStable && '(Stable)'}
                 </span>
               </div>
             </>
@@ -351,10 +355,10 @@ const ProcessBatch: React.FC = () => {
                       : 'bg-red-100 text-red-800'
                   }`}
                 >
-                  {currentWeight.toFixed(3)}g
+                  {currentWeight !== null ? currentWeight.toFixed(3) : '0.000'}g
                   {withinTolerance && isStable && ' ✓ Ready'}
                   {withinTolerance && !isStable && ' (Stabilizing...)'}
-                  {!withinTolerance && ' ✗ Out of Range'}
+                  {!withinTolerance && currentWeight !== null && ' ✗ Out of Range'}
                 </div>
               </div>
 
