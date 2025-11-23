@@ -268,4 +268,105 @@ export class QRService {
 
     return qrCodes;
   }
+
+  /**
+   * Validate QR code from a processed batch
+   */
+  async validateProcessedBatchQR(data: {
+    qrCode: string;
+    expectedStepId: number;
+  }): Promise<{
+    valid: boolean;
+    message: string;
+    data?: QRCodeData;
+    batchLogId?: number;
+  }> {
+    try {
+      // Parse QR code data
+      const qrData: QRCodeData = JSON.parse(data.qrCode);
+
+      // Verify signature
+      const { signature, ...payload } = qrData;
+      const expectedSignature = this.createSignature(payload);
+
+      if (signature !== expectedSignature) {
+        return {
+          valid: false,
+          message: 'QR code signature is invalid. Possible tampering detected.',
+        };
+      }
+
+      // Check if QR code is not too old (e.g., 24 hours)
+      const now = Date.now();
+      const age = now - qrData.timestamp;
+      const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+
+      if (age > maxAge) {
+        return {
+          valid: false,
+          message: 'QR code has expired. Please generate a new one.',
+        };
+      }
+
+      // Find the step
+      const step = await prisma.recipeStep.findUnique({
+        where: { id: data.expectedStepId },
+        include: {
+          material: true,
+        },
+      });
+
+      if (!step) {
+        return {
+          valid: false,
+          message: 'Step not found in database.',
+        };
+      }
+
+      // Verify material matches
+      const materialMatch = step.material.code === qrData.materialCode;
+
+      if (!materialMatch) {
+        return {
+          valid: false,
+          message: `Material mismatch. Expected ${step.material.code} but scanned ${qrData.materialCode}.`,
+          data: qrData,
+        };
+      }
+
+      // Find the batch log that generated this QR code
+      const batchLog = await prisma.batchLog.findFirst({
+        where: {
+          stepId: data.expectedStepId,
+          materialId: step.materialId,
+          generatedQrCode: data.qrCode,
+          batch: {
+            status: 'PROCESSED',
+          },
+        },
+        include: {
+          batch: true,
+        },
+      });
+
+      if (!batchLog) {
+        return {
+          valid: false,
+          message: 'This QR code was not generated from a processed batch.',
+        };
+      }
+
+      return {
+        valid: true,
+        message: 'QR code is valid and from a processed batch.',
+        data: qrData,
+        batchLogId: batchLog.id,
+      };
+    } catch (error: any) {
+      return {
+        valid: false,
+        message: `Invalid QR code format: ${error.message}`,
+      };
+    }
+  }
 }

@@ -26,6 +26,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navLinks = [
     { path: '/dashboard', label: 'Dashboard', icon: '📊', allowedRoles: ['ADMIN', 'OPERATOR'] },
     { path: '/batch', label: 'Run Batch', icon: '⚗️', allowedRoles: ['ADMIN', 'OPERATOR'] },
+    { path: '/process-batch', label: 'Process Batch', icon: '🔬', allowedRoles: ['ADMIN', 'OPERATOR'] },
     { path: '/recipes', label: 'Recipes', icon: '📖', allowedRoles: ['ADMIN', 'OPERATOR'] },
     { path: '/materials', label: 'Materials', icon: '📦', allowedRoles: ['ADMIN'] },
     { path: '/reports', label: 'Reports', icon: '📈', allowedRoles: ['ADMIN', 'OPERATOR'] },

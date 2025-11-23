@@ -347,4 +347,211 @@ export class BatchesController {
       });
     }
   }
+
+  /**
+   * POST /api/batches/process/start
+   * Start a new process batch
+   */
+  async startProcessBatch(req: Request, res: Response) {
+    try {
+      const { recipeId, equipmentId } = req.body;
+      const operatorId = req.user!.userId;
+
+      if (!recipeId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Recipe ID is required',
+        });
+      }
+
+      const batch = await batchesService.startProcessBatch({
+        recipeId: parseInt(recipeId, 10),
+        operatorId,
+        equipmentId: equipmentId ? parseInt(equipmentId, 10) : undefined,
+      });
+
+      return res.status(201).json({
+        success: true,
+        data: batch,
+        message: 'Process batch started successfully',
+      });
+    } catch (error: any) {
+      logger.error('Error starting process batch:', error);
+
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to start process batch',
+        error: error.message,
+      });
+    }
+  }
+
+  /**
+   * POST /api/batches/process/:id/log-step
+   * Log a step in a process batch with QR code generation
+   */
+  async logProcessStep(req: Request, res: Response) {
+    try {
+      const batchId = parseInt(req.params.id, 10);
+
+      if (isNaN(batchId)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid batch ID',
+        });
+      }
+
+      const { stepId, materialId, actualWeight, setpointSnapshot, toleranceSnapshot, generatedQrCode } =
+        req.body;
+
+      // Validation
+      if (
+        !stepId ||
+        !materialId ||
+        actualWeight === undefined ||
+        setpointSnapshot === undefined ||
+        toleranceSnapshot === undefined ||
+        !generatedQrCode
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            'stepId, materialId, actualWeight, setpointSnapshot, toleranceSnapshot, and generatedQrCode are required',
+        });
+      }
+
+      if (actualWeight < 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Actual weight cannot be negative',
+        });
+      }
+
+      if (setpointSnapshot <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Setpoint must be greater than 0',
+        });
+      }
+
+      if (toleranceSnapshot < 0 || toleranceSnapshot > 100) {
+        return res.status(400).json({
+          success: false,
+          message: 'Tolerance percent must be between 0 and 100',
+        });
+      }
+
+      const log = await batchesService.logProcessStep(batchId, {
+        stepId: parseInt(stepId, 10),
+        materialId: parseInt(materialId, 10),
+        actualWeight: parseFloat(actualWeight),
+        setpointSnapshot: parseFloat(setpointSnapshot),
+        toleranceSnapshot: parseFloat(toleranceSnapshot),
+        generatedQrCode,
+      });
+
+      return res.status(201).json({
+        success: true,
+        data: log,
+        message: 'Process step logged successfully',
+      });
+    } catch (error: any) {
+      logger.error(`Error logging process step for batch ${req.params.id}:`, error);
+
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to log process step',
+        error: error.message,
+      });
+    }
+  }
+
+  /**
+   * PUT /api/batches/process/:id/complete
+   * Complete a process batch
+   */
+  async completeProcessBatch(req: Request, res: Response) {
+    try {
+      const batchId = parseInt(req.params.id, 10);
+
+      if (isNaN(batchId)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid batch ID',
+        });
+      }
+
+      const batch = await batchesService.completeProcessBatch(batchId);
+
+      return res.json({
+        success: true,
+        data: batch,
+        message: 'Process batch completed successfully',
+      });
+    } catch (error: any) {
+      logger.error(`Error completing process batch ${req.params.id}:`, error);
+
+      if (error.message === 'Batch not found') {
+        return res.status(404).json({
+          success: false,
+          message: error.message,
+        });
+      }
+
+      if (error.message.includes('Cannot complete process batch')) {
+        return res.status(400).json({
+          success: false,
+          message: error.message,
+        });
+      }
+
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to complete process batch',
+        error: error.message,
+      });
+    }
+  }
+
+  /**
+   * GET /api/batches/processed
+   * Get all processed batches
+   */
+  async getProcessedBatches(req: Request, res: Response) {
+    try {
+      const { recipeId, operatorId, startDate, endDate } = req.query;
+
+      const filters: any = {};
+
+      if (recipeId) {
+        filters.recipeId = parseInt(recipeId as string, 10);
+      }
+
+      if (operatorId) {
+        filters.operatorId = parseInt(operatorId as string, 10);
+      }
+
+      if (startDate) {
+        filters.startDate = new Date(startDate as string);
+      }
+
+      if (endDate) {
+        filters.endDate = new Date(endDate as string);
+      }
+
+      const batches = await batchesService.getProcessedBatches(filters);
+
+      return res.json({
+        success: true,
+        data: batches,
+      });
+    } catch (error: any) {
+      logger.error('Error fetching processed batches:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to fetch processed batches',
+        error: error.message,
+      });
+    }
+  }
 }

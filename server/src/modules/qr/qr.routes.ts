@@ -21,6 +21,12 @@ router.post('/generate', qrController.generateQRCode.bind(qrController));
 router.post('/validate', qrController.validateQRCode.bind(qrController));
 
 /**
+ * POST /api/qr/validate-processed
+ * Validate a QR code from a processed batch
+ */
+router.post('/validate-processed', qrController.validateProcessedBatchQR.bind(qrController));
+
+/**
  * GET /api/qr/batch-log/:id
  * Generate QR code for a batch log
  */

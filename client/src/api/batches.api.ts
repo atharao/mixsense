@@ -17,4 +17,14 @@ export const batchesApi = {
   end: (batchId: number, data: EndBatchRequest) => put<Batch>(`/batches/${batchId}/end`, data),
 
   getStatistics: (params?: any) => get('/batches/statistics', { params }),
+
+  // Process batch endpoints
+  getProcessed: (params?: any) => get<Batch[]>('/batches/processed', { params }),
+
+  startProcess: (data: StartBatchRequest) => post<Batch>('/batches/process/start', data),
+
+  logProcessStep: (batchId: number, data: LogStepRequest & { generatedQrCode: string }) =>
+    post<BatchLog>(`/batches/process/${batchId}/log-step`, data),
+
+  completeProcess: (batchId: number) => put<Batch>(`/batches/process/${batchId}/complete`, {}),
 };

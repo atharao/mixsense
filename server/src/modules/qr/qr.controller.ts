@@ -177,4 +177,49 @@ export class QRController {
       });
     }
   }
+
+  /**
+   * POST /api/qr/validate-processed
+   * Validate a QR code from a processed batch
+   */
+  async validateProcessedBatchQR(req: Request, res: Response) {
+    try {
+      const { qrCode, expectedStepId } = req.body;
+
+      // Validation
+      if (!qrCode || !expectedStepId) {
+        return res.status(400).json({
+          success: false,
+          message: 'qrCode and expectedStepId are required',
+        });
+      }
+
+      const result = await qrService.validateProcessedBatchQR({
+        qrCode,
+        expectedStepId: parseInt(expectedStepId, 10),
+      });
+
+      if (!result.valid) {
+        return res.status(400).json({
+          success: false,
+          message: result.message,
+          data: result.data,
+        });
+      }
+
+      return res.json({
+        success: true,
+        message: result.message,
+        data: result.data,
+        batchLogId: result.batchLogId,
+      });
+    } catch (error: any) {
+      logger.error('Error validating processed batch QR code:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to validate QR code',
+        error: error.message,
+      });
+    }
+  }
 }

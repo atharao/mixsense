@@ -22,6 +22,30 @@ router.get('/active', batchesController.getActiveBatch.bind(batchesController));
 router.get('/statistics', requireRole('ADMIN'), batchesController.getStatistics.bind(batchesController));
 
 /**
+ * GET /api/batches/processed
+ * Get all processed batches
+ */
+router.get('/processed', batchesController.getProcessedBatches.bind(batchesController));
+
+/**
+ * POST /api/batches/process/start
+ * Start a new process batch
+ */
+router.post('/process/start', batchesController.startProcessBatch.bind(batchesController));
+
+/**
+ * POST /api/batches/process/:id/log-step
+ * Log a step in a process batch with QR code
+ */
+router.post('/process/:id/log-step', batchesController.logProcessStep.bind(batchesController));
+
+/**
+ * PUT /api/batches/process/:id/complete
+ * Complete a process batch
+ */
+router.put('/process/:id/complete', batchesController.completeProcessBatch.bind(batchesController));
+
+/**
  * GET /api/batches
  * Get all batches with optional filters
  */

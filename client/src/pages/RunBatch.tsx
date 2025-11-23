@@ -19,6 +19,8 @@ const RunBatch: React.FC = () => {
   const [isStarting, setIsStarting] = useState(false);
   const [showQrScanner, setShowQrScanner] = useState(false);
   const [qrValidationMessage, setQrValidationMessage] = useState<string>('');
+  const [isQrValid, setIsQrValid] = useState(false);
+  const [validatedQrCode, setValidatedQrCode] = useState<string>('');
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -108,20 +110,27 @@ const RunBatch: React.FC = () => {
     if (!currentStep) return;
 
     try {
-      const response = await qrApi.validate({
+      // Validate QR code from processed batch
+      const response = await qrApi.validateProcessed({
         qrCode: code,
-        expectedMaterialId: currentStep.materialId,
-        stepId: currentStep.id,
+        expectedStepId: currentStep.id,
       });
 
       if (response.data.success) {
-        setQrValidationMessage('✓ QR Code validated successfully');
-        setTimeout(() => setQrValidationMessage(''), 3000);
+        setQrValidationMessage('✓ QR Code from processed batch validated successfully');
+        setIsQrValid(true);
+        setValidatedQrCode(code);
+        setShowQrScanner(false);
       } else {
         setQrValidationMessage(`✗ ${response.data.message}`);
+        setIsQrValid(false);
+        setValidatedQrCode('');
       }
     } catch (error: any) {
-      setQrValidationMessage(`✗ ${error.message || 'QR validation failed'}`);
+      const errorMessage = error.response?.data?.message || error.message || 'QR validation failed';
+      setQrValidationMessage(`✗ ${errorMessage}`);
+      setIsQrValid(false);
+      setValidatedQrCode('');
     }
   };
 
@@ -136,6 +145,11 @@ const RunBatch: React.FC = () => {
       return;
     }
 
+    if (!isQrValid || !validatedQrCode) {
+      alert('Please scan a valid QR code from a processed batch before logging this step');
+      return;
+    }
+
     try {
       await batchesApi.logStep(activeBatch.id, {
         stepId: currentStep.id,
@@ -143,7 +157,7 @@ const RunBatch: React.FC = () => {
         actualWeight: loadCellData.weight,
         setpointSnapshot: currentStep.setpoint,
         toleranceSnapshot: currentStep.tolerancePercent,
-        scannedQrCode: lastScannedCode || undefined,
+        scannedQrCode: validatedQrCode,
       });
 
       // Move to next step or complete
@@ -151,6 +165,8 @@ const RunBatch: React.FC = () => {
         dispatch(nextStep());
         resetQr();
         setQrValidationMessage('');
+        setIsQrValid(false);
+        setValidatedQrCode('');
         await tare(); // Auto-tare for next step
       } else {
         // All steps done, offer to complete batch
@@ -330,30 +346,50 @@ const RunBatch: React.FC = () => {
                 )}
               </div>
 
-              {/* QR Code Section */}
+              {/* QR Code Section - REQUIRED */}
               <div>
-                <button
-                  onClick={() => setShowQrScanner(!showQrScanner)}
-                  className="btn-secondary w-full mb-2"
-                >
-                  {showQrScanner ? 'Close QR Scanner' : '📱 Scan QR Code (Optional)'}
-                </button>
+                <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-3 mb-2">
+                  <p className="text-sm text-yellow-800 font-semibold">⚠ QR Code Required</p>
+                  <p className="text-xs text-yellow-700 mt-1">
+                    You must scan a QR code from a processed batch before logging this step.
+                  </p>
+                </div>
 
-                {showQrScanner && (
-                  <div className="border-2 border-gray-300 rounded-lg overflow-hidden">
-                    <video
-                      ref={videoRef}
-                      className="w-full"
-                      autoPlay
-                      playsInline
-                      muted
-                    />
-                    <canvas ref={canvasRef} className="hidden" />
+                {!isQrValid ? (
+                  <>
+                    <button
+                      onClick={() => setShowQrScanner(!showQrScanner)}
+                      className={`w-full mb-2 ${
+                        showQrScanner ? 'btn-danger' : 'btn-primary'
+                      }`}
+                    >
+                      {showQrScanner ? 'Close QR Scanner' : '📱 Scan QR Code (Required)'}
+                    </button>
+
+                    {showQrScanner && (
+                      <div className="border-2 border-gray-300 rounded-lg overflow-hidden">
+                        <video
+                          ref={videoRef}
+                          className="w-full"
+                          autoPlay
+                          playsInline
+                          muted
+                        />
+                        <canvas ref={canvasRef} className="hidden" />
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="bg-green-50 border-2 border-green-200 rounded-lg p-3 mb-2">
+                    <p className="text-sm text-green-800 font-semibold">✓ QR Code Validated</p>
+                    <p className="text-xs text-green-700 mt-1">
+                      Valid QR code from processed batch detected.
+                    </p>
                   </div>
                 )}
 
                 {qrValidationMessage && (
-                  <p className={`text-sm mt-2 ${qrValidationMessage.startsWith('✓') ? 'text-success-600' : 'text-danger-600'}`}>
+                  <p className={`text-sm mt-2 font-semibold ${qrValidationMessage.startsWith('✓') ? 'text-success-600' : 'text-danger-600'}`}>
                     {qrValidationMessage}
                   </p>
                 )}
@@ -415,12 +451,18 @@ const RunBatch: React.FC = () => {
               </button>
               <button
                 onClick={handleLogStep}
-                disabled={!isStable || currentWeight === null}
+                disabled={!isStable || currentWeight === null || !isQrValid}
                 className="btn-success disabled:opacity-50 disabled:cursor-not-allowed"
+                title={!isQrValid ? 'Scan a valid QR code first' : ''}
               >
                 ✓ Log Step
               </button>
             </div>
+            {!isQrValid && (
+              <p className="text-xs text-center text-red-600 mt-2">
+                QR code validation required before logging
+              </p>
+            )}
           </div>
         </div>
       </div>

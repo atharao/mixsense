@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import Materials from './pages/Materials';
 import Recipes from './pages/Recipes';
 import RunBatch from './pages/RunBatch';
+import ProcessBatch from './pages/ProcessBatch';
 import Reports from './pages/Reports';
 import QRGenerator from './pages/QRGenerator';
 import UserManagement from './pages/UserManagement';
@@ -77,6 +78,15 @@ function App() {
           element={
             <ProtectedRoute>
               <RunBatch />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/process-batch"
+          element={
+            <ProtectedRoute>
+              <ProcessBatch />
             </ProtectedRoute>
           }
         />

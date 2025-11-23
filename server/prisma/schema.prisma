@@ -124,6 +124,7 @@ enum BatchStatus {
   IN_PROGRESS
   COMPLETED
   ABORTED
+  PROCESSED
 }
 
 // BatchLog model for logging each step execution
@@ -136,6 +137,7 @@ model BatchLog {
   setpointSnapshot    Decimal       @map("setpoint_snapshot") @db.Decimal(10, 3)
   toleranceSnapshot   Decimal       @map("tolerance_snapshot") @db.Decimal(5, 2)
   scannedQrCode       String?       @map("scanned_qr_code") @db.Text
+  generatedQrCode     String?       @map("generated_qr_code") @db.Text
   timestamp           DateTime      @default(now())
 
   // Relations
