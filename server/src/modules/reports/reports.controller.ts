@@ -122,7 +122,10 @@ export class ReportsController {
       const excelBuffer = await reportsService.generateExcelReport(filters);
 
       const timestamp = new Date().toISOString().split('T')[0];
-      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader(
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
       res.setHeader('Content-Disposition', `attachment; filename=batch_reports_${timestamp}.xlsx`);
       return res.send(excelBuffer);
     } catch (error: any) {

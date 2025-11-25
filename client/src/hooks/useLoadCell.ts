@@ -48,25 +48,30 @@ export const useLoadCell = (config: LoadCellConfig = DEFAULT_CONFIG) => {
    * - With sign: "+1234.56"
    * - Stability indicator: "ST 1234.56" or "US 1234.56"
    */
-  const parseWeightData = useCallback((data: string): { weight: number | null; stable: boolean } => {
-    // Remove whitespace and normalize
-    const normalized = data.trim().toUpperCase();
+  const parseWeightData = useCallback(
+    (data: string): { weight: number | null; stable: boolean } => {
+      // Remove whitespace and normalize
+      const normalized = data.trim().toUpperCase();
 
-    // Check for stability indicator
-    const isStable = normalized.startsWith('ST') || (!normalized.startsWith('US') && !normalized.includes('UNSTABLE'));
+      // Check for stability indicator
+      const isStable =
+        normalized.startsWith('ST') ||
+        (!normalized.startsWith('US') && !normalized.includes('UNSTABLE'));
 
-    // Extract numeric value
-    const numericMatch = normalized.match(/[-+]?\d+\.?\d*/);
-    if (!numericMatch) {
-      return { weight: null, stable: false };
-    }
+      // Extract numeric value
+      const numericMatch = normalized.match(/[-+]?\d+\.?\d*/);
+      if (!numericMatch) {
+        return { weight: null, stable: false };
+      }
 
-    const weight = parseFloat(numericMatch[0]);
-    return {
-      weight: isNaN(weight) ? null : weight,
-      stable: isStable,
-    };
-  }, []);
+      const weight = parseFloat(numericMatch[0]);
+      return {
+        weight: isNaN(weight) ? null : weight,
+        stable: isStable,
+      };
+    },
+    [],
+  );
 
   /**
    * Check weight stability over time
@@ -106,7 +111,7 @@ export const useLoadCell = (config: LoadCellConfig = DEFAULT_CONFIG) => {
       bufferRef.current = lines.pop() || '';
 
       // Process complete lines
-      lines.forEach((line) => {
+      lines.forEach(line => {
         if (!line.trim()) return;
 
         const { weight, stable } = parseWeightData(line);
@@ -126,7 +131,7 @@ export const useLoadCell = (config: LoadCellConfig = DEFAULT_CONFIG) => {
         }
       });
     },
-    [parseWeightData, checkStability, dispatch]
+    [parseWeightData, checkStability, dispatch],
   );
 
   /**
@@ -139,6 +144,7 @@ export const useLoadCell = (config: LoadCellConfig = DEFAULT_CONFIG) => {
       const reader = portRef.current.readable.getReader();
       readerRef.current = reader;
 
+      // eslint-disable-next-line no-constant-condition
       while (true) {
         const { value, done } = await reader.read();
 

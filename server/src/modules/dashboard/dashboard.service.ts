@@ -107,7 +107,7 @@ export class DashboardService {
 
     // Get active batches using each equipment
     const equipmentWithStatus = await Promise.all(
-      equipment.map(async (eq) => {
+      equipment.map(async eq => {
         const activeBatch = await prisma.batch.findFirst({
           where: {
             equipmentId: eq.id,
@@ -139,7 +139,7 @@ export class DashboardService {
               }
             : null,
         };
-      })
+      }),
     );
 
     return equipmentWithStatus;
@@ -169,7 +169,7 @@ export class DashboardService {
     // Group by date
     const trendData: { [key: string]: { completed: number; aborted: number; total: number } } = {};
 
-    batches.forEach((batch) => {
+    batches.forEach(batch => {
       const dateKey = batch.startTime.toISOString().split('T')[0];
 
       if (!trendData[dateKey]) {
@@ -187,7 +187,7 @@ export class DashboardService {
     // Convert to array format
     const trends = Object.keys(trendData)
       .sort()
-      .map((date) => ({
+      .map(date => ({
         date,
         ...trendData[date],
         completionRate:
@@ -221,7 +221,7 @@ export class DashboardService {
 
     // Get material details
     const materialUsage = await Promise.all(
-      logs.map(async (log) => {
+      logs.map(async log => {
         const material = await prisma.material.findUnique({
           where: { id: log.materialId },
           select: {
@@ -237,7 +237,7 @@ export class DashboardService {
           usageCount: log._count.materialId,
           totalWeight: log._sum.actualWeight || 0,
         };
-      })
+      }),
     );
 
     return materialUsage;
@@ -261,7 +261,7 @@ export class DashboardService {
     });
 
     const operatorStats = await Promise.all(
-      operators.map(async (operator) => {
+      operators.map(async operator => {
         const [completed, aborted, activeBatch] = await Promise.all([
           prisma.batch.count({
             where: {
@@ -304,7 +304,7 @@ export class DashboardService {
               }
             : null,
         };
-      })
+      }),
     );
 
     return operatorStats.sort((a, b) => b.totalBatches - a.totalBatches);
@@ -343,7 +343,7 @@ export class DashboardService {
       },
     });
 
-    return logsWithIssues.map((log) => ({
+    return logsWithIssues.map(log => ({
       id: log.id,
       batchId: log.batchId,
       batchRecipe: log.batch.recipe.name,
@@ -353,7 +353,11 @@ export class DashboardService {
       setpoint: Number(log.setpointSnapshot),
       actualWeight: Number(log.actualWeight),
       tolerance: Number(log.toleranceSnapshot),
-      deviation: ((Math.abs(Number(log.actualWeight) - Number(log.setpointSnapshot)) / Number(log.setpointSnapshot)) * 100).toFixed(2),
+      deviation: (
+        (Math.abs(Number(log.actualWeight) - Number(log.setpointSnapshot)) /
+          Number(log.setpointSnapshot)) *
+        100
+      ).toFixed(2),
       timestamp: log.timestamp,
     }));
   }

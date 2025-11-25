@@ -63,7 +63,7 @@ const Login: React.FC = () => {
               type="text"
               className="input"
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={e => setUsername(e.target.value)}
               placeholder="Enter your username"
               autoComplete="username"
               autoFocus
@@ -80,7 +80,7 @@ const Login: React.FC = () => {
               type="password"
               className="input"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={e => setPassword(e.target.value)}
               placeholder="Enter your password"
               autoComplete="current-password"
               disabled={loading}

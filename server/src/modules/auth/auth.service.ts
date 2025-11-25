@@ -63,7 +63,7 @@ export class AuthService {
   async createUser(
     username: string,
     password: string,
-    role: 'ADMIN' | 'OPERATOR'
+    role: 'ADMIN' | 'OPERATOR',
   ): Promise<{ id: number; username: string; role: string }> {
     // Hash password
     const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
@@ -168,7 +168,7 @@ export class AuthService {
 
   async updateUser(
     userId: number,
-    data: { username?: string; role?: 'ADMIN' | 'OPERATOR'; password?: string }
+    data: { username?: string; role?: 'ADMIN' | 'OPERATOR'; password?: string },
   ): Promise<{ id: number; username: string; role: string }> {
     // Check if user exists
     const user = await prisma.user.findUnique({

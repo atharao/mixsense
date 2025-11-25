@@ -32,7 +32,15 @@ const ProcessBatch: React.FC = () => {
     generatedQRCodes: new Map(),
   });
 
-  const { isConnected, error: loadCellError, currentWeight, isStable, connect, disconnect, tare } = useLoadCell();
+  const {
+    isConnected,
+    error: loadCellError,
+    currentWeight,
+    isStable,
+    connect,
+    disconnect,
+    tare,
+  } = useLoadCell();
 
   useEffect(() => {
     loadRecipes();
@@ -108,7 +116,7 @@ const ProcessBatch: React.FC = () => {
 
     if (!withinTolerance) {
       alert(
-        `Weight ${currentWeight.toFixed(3)}g is not within tolerance range ${lowerBound.toFixed(3)}g - ${upperBound.toFixed(3)}g`
+        `Weight ${currentWeight.toFixed(3)}g is not within tolerance range ${lowerBound.toFixed(3)}g - ${upperBound.toFixed(3)}g`,
       );
       return;
     }
@@ -209,7 +217,8 @@ const ProcessBatch: React.FC = () => {
   };
 
   const currentStep = processBatch.currentRecipe?.steps[processBatch.currentStepIndex];
-  const allStepsProcessed = processBatch.processedSteps.size === processBatch.currentRecipe?.steps.length;
+  const allStepsProcessed =
+    processBatch.processedSteps.size === processBatch.currentRecipe?.steps.length;
 
   // Calculate tolerance values for current step
   let withinTolerance = false;
@@ -243,7 +252,10 @@ const ProcessBatch: React.FC = () => {
 
           {isConnected && (
             <>
-              <button onClick={tare} className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+              <button
+                onClick={tare}
+                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+              >
                 Tare
               </button>
 
@@ -254,8 +266,11 @@ const ProcessBatch: React.FC = () => {
 
               <div className="flex items-center gap-2">
                 <span className="font-semibold">Weight:</span>
-                <span className={`px-3 py-1 rounded ${isStable ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                  {currentWeight !== null ? currentWeight.toFixed(3) : '0.000'}g {isStable && '(Stable)'}
+                <span
+                  className={`px-3 py-1 rounded ${isStable ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'}`}
+                >
+                  {currentWeight !== null ? currentWeight.toFixed(3) : '0.000'}g{' '}
+                  {isStable && '(Stable)'}
                 </span>
               </div>
             </>
@@ -276,7 +291,7 @@ const ProcessBatch: React.FC = () => {
             <label className="block text-sm font-medium mb-2">Select Recipe</label>
             <select
               value={selectedRecipeId}
-              onChange={(e) => setSelectedRecipeId(Number(e.target.value))}
+              onChange={e => setSelectedRecipeId(Number(e.target.value))}
               className="w-full p-2 border rounded"
             >
               <option value={0}>-- Select a recipe --</option>
@@ -351,8 +366,8 @@ const ProcessBatch: React.FC = () => {
                     withinTolerance && isStable
                       ? 'bg-green-100 text-green-800'
                       : withinTolerance
-                      ? 'bg-yellow-100 text-yellow-800'
-                      : 'bg-red-100 text-red-800'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-red-100 text-red-800'
                   }`}
                 >
                   {currentWeight !== null ? currentWeight.toFixed(3) : '0.000'}g
@@ -367,7 +382,9 @@ const ProcessBatch: React.FC = () => {
                 disabled={!withinTolerance || !isStable || isLoggingStep}
                 className="w-full py-3 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-300 font-semibold"
               >
-                {isLoggingStep ? 'Processing & Generating QR...' : 'Process Step & Generate QR Code'}
+                {isLoggingStep
+                  ? 'Processing & Generating QR...'
+                  : 'Process Step & Generate QR Code'}
               </button>
             </div>
           )}
@@ -380,12 +397,13 @@ const ProcessBatch: React.FC = () => {
                 {processBatch.currentRecipe.steps
                   .filter((step: any) => processBatch.processedSteps.has(step.id))
                   .map((step: any) => (
-                    <div key={step.id} className="flex items-center justify-between p-3 bg-green-50 rounded">
+                    <div
+                      key={step.id}
+                      className="flex items-center justify-between p-3 bg-green-50 rounded"
+                    >
                       <div>
                         <p className="font-semibold">{step.material.name}</p>
-                        <p className="text-sm text-gray-600">
-                          Target: {step.setpoint.toFixed(3)}g
-                        </p>
+                        <p className="text-sm text-gray-600">Target: {step.setpoint.toFixed(3)}g</p>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="px-3 py-1 bg-green-200 text-green-800 rounded text-sm">

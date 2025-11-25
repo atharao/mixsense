@@ -14,7 +14,13 @@ export class QRController {
       const { materialCode, materialName, setpoint, actualValue, equipment } = req.body;
 
       // Validation
-      if (!materialCode || !materialName || setpoint === undefined || actualValue === undefined || !equipment) {
+      if (
+        !materialCode ||
+        !materialName ||
+        setpoint === undefined ||
+        actualValue === undefined ||
+        !equipment
+      ) {
         return res.status(400).json({
           success: false,
           message: 'materialCode, materialName, setpoint, actualValue, and equipment are required',

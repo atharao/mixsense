@@ -122,8 +122,8 @@ const UserManagement: React.FC = () => {
     }
   };
 
-  const filteredUsers = users.filter((u) =>
-    u.username.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredUsers = users.filter(u =>
+    u.username.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -146,7 +146,7 @@ const UserManagement: React.FC = () => {
           placeholder="Search users..."
           className="input"
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={e => setSearchQuery(e.target.value)}
         />
       </div>
 
@@ -176,7 +176,7 @@ const UserManagement: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                filteredUsers.map((user) => (
+                filteredUsers.map(user => (
                   <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-3 px-4">
                       <div className="flex items-center">
@@ -191,9 +191,7 @@ const UserManagement: React.FC = () => {
                     <td className="py-3 px-4">
                       <span
                         className={`badge ${
-                          user.role === 'ADMIN'
-                            ? 'badge-primary'
-                            : 'badge-secondary'
+                          user.role === 'ADMIN' ? 'badge-primary' : 'badge-secondary'
                         }`}
                       >
                         {user.role}
@@ -234,7 +232,7 @@ const UserManagement: React.FC = () => {
       {/* Create/Edit User Modal */}
       {showModal && (
         <div className="modal-overlay" onClick={handleCloseModal}>
-          <div className="modal-content max-w-md" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content max-w-md" onClick={e => e.stopPropagation()}>
             <div className="p-6">
               <h3 className="text-xl font-bold mb-4">
                 {editingUser ? 'Edit User' : 'Create New User'}
@@ -242,27 +240,23 @@ const UserManagement: React.FC = () => {
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Username *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Username *</label>
                   <input
                     type="text"
                     className="input"
                     value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    onChange={e => setUsername(e.target.value)}
                     required
                     placeholder="Enter username"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Role *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Role *</label>
                   <select
                     className="input"
                     value={role}
-                    onChange={(e) => setRole(e.target.value as 'ADMIN' | 'OPERATOR')}
+                    onChange={e => setRole(e.target.value as 'ADMIN' | 'OPERATOR')}
                     required
                   >
                     <option value="OPERATOR">Operator</option>
@@ -278,7 +272,7 @@ const UserManagement: React.FC = () => {
                     type="password"
                     className="input"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={e => setPassword(e.target.value)}
                     required={!editingUser}
                     placeholder={editingUser ? 'Enter new password' : 'Enter password'}
                     minLength={8}
@@ -311,13 +305,13 @@ const UserManagement: React.FC = () => {
         <div className="card">
           <div className="text-sm text-gray-500 mb-1">Administrators</div>
           <div className="text-3xl font-bold text-primary-600">
-            {users.filter((u) => u.role === 'ADMIN').length}
+            {users.filter(u => u.role === 'ADMIN').length}
           </div>
         </div>
         <div className="card">
           <div className="text-sm text-gray-500 mb-1">Operators</div>
           <div className="text-3xl font-bold text-secondary-600">
-            {users.filter((u) => u.role === 'OPERATOR').length}
+            {users.filter(u => u.role === 'OPERATOR').length}
           </div>
         </div>
       </div>

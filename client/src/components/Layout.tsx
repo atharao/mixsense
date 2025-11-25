@@ -26,7 +26,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navLinks = [
     { path: '/dashboard', label: 'Dashboard', icon: '📊', allowedRoles: ['ADMIN', 'OPERATOR'] },
     { path: '/batch', label: 'Run Batch', icon: '⚗️', allowedRoles: ['ADMIN', 'OPERATOR'] },
-    { path: '/process-batch', label: 'Process Batch', icon: '🔬', allowedRoles: ['ADMIN', 'OPERATOR'] },
+    {
+      path: '/process-batch',
+      label: 'Process Batch',
+      icon: '🔬',
+      allowedRoles: ['ADMIN', 'OPERATOR'],
+    },
     { path: '/recipes', label: 'Recipes', icon: '📖', allowedRoles: ['ADMIN', 'OPERATOR'] },
     { path: '/materials', label: 'Materials', icon: '📦', allowedRoles: ['ADMIN'] },
     { path: '/reports', label: 'Reports', icon: '📈', allowedRoles: ['ADMIN', 'OPERATOR'] },
@@ -34,9 +39,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { path: '/qr-generator', label: 'QR Generator', icon: '📱', allowedRoles: ['ADMIN'] },
   ];
 
-  const filteredNavLinks = navLinks.filter((link) =>
-    link.allowedRoles.includes(user?.role || '')
-  );
+  const filteredNavLinks = navLinks.filter(link => link.allowedRoles.includes(user?.role || ''));
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -48,7 +51,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
 
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-          {filteredNavLinks.map((link) => (
+          {filteredNavLinks.map(link => (
             <Link
               key={link.path}
               to={link.path}
@@ -74,10 +77,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <p className="text-sm text-gray-500">{user?.role}</p>
             </div>
           </div>
-          <button
-            onClick={handleLogout}
-            className="w-full btn-secondary text-sm"
-          >
+          <button onClick={handleLogout} className="w-full btn-secondary text-sm">
             Logout
           </button>
         </div>
@@ -89,7 +89,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <header className="bg-white shadow-sm px-6 py-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-gray-800">
-              {navLinks.find((link) => isActive(link.path))?.label || 'MixSense'}
+              {navLinks.find(link => isActive(link.path))?.label || 'MixSense'}
             </h2>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-500">
@@ -107,9 +107,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-6">
-          {children}
-        </div>
+        <div className="flex-1 overflow-y-auto p-6">{children}</div>
       </main>
     </div>
   );

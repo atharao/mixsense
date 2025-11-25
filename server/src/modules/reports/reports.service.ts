@@ -6,7 +6,11 @@ import ExcelJS from 'exceljs';
 const prisma = new PrismaClient();
 
 // Helper function to calculate if a log is within tolerance
-function isWithinTolerance(log: { actualWeight: any; setpointSnapshot: any; toleranceSnapshot: any }): boolean {
+function isWithinTolerance(log: {
+  actualWeight: any;
+  setpointSnapshot: any;
+  toleranceSnapshot: any;
+}): boolean {
   const actualWeight = Number(log.actualWeight);
   const setpoint = Number(log.setpointSnapshot);
   const tolerance = Number(log.toleranceSnapshot);
@@ -175,7 +179,7 @@ export class ReportsService {
     }
 
     // Batch logs table
-    const tableData = batch.logs.map((log) => [
+    const tableData = batch.logs.map(log => [
       log.step.stepOrder,
       log.material.name,
       log.material.code,
@@ -209,7 +213,7 @@ export class ReportsService {
     const finalY = (doc as any).lastAutoTable.finalY || 85;
     doc.setFontSize(10);
     const totalSteps = batch.logs.length;
-    const stepsInTolerance = batch.logs.filter((l) => isWithinTolerance(l)).length;
+    const stepsInTolerance = batch.logs.filter(l => isWithinTolerance(l)).length;
     const toleranceRate = totalSteps > 0 ? ((stepsInTolerance / totalSteps) * 100).toFixed(1) : '0';
 
     doc.text(`Total Steps: ${totalSteps}`, 14, finalY + 10);
@@ -249,10 +253,11 @@ export class ReportsService {
       { header: 'Tolerance Rate', key: 'toleranceRate', width: 15 },
     ];
 
-    batches.forEach((batch) => {
+    batches.forEach(batch => {
       const totalSteps = batch.logs.length;
-      const stepsInTolerance = batch.logs.filter((l) => isWithinTolerance(l)).length;
-      const toleranceRate = totalSteps > 0 ? ((stepsInTolerance / totalSteps) * 100).toFixed(1) : '0';
+      const stepsInTolerance = batch.logs.filter(l => isWithinTolerance(l)).length;
+      const toleranceRate =
+        totalSteps > 0 ? ((stepsInTolerance / totalSteps) * 100).toFixed(1) : '0';
 
       summarySheet.addRow({
         id: batch.id,
@@ -277,7 +282,7 @@ export class ReportsService {
     summarySheet.getRow(1).font = { color: { argb: 'FFFFFFFF' }, bold: true };
 
     // Detail sheet for each batch
-    batches.forEach((batch) => {
+    batches.forEach(batch => {
       const detailSheet = workbook.addWorksheet(`Batch ${batch.id}`);
 
       // Batch information
@@ -370,24 +375,28 @@ export class ReportsService {
     const batches = await this.getBatchReports(filters);
 
     const totalBatches = batches.length;
-    const completedBatches = batches.filter((b) => b.status === 'COMPLETED').length;
-    const abortedBatches = batches.filter((b) => b.status === 'ABORTED').length;
+    const completedBatches = batches.filter(b => b.status === 'COMPLETED').length;
+    const abortedBatches = batches.filter(b => b.status === 'ABORTED').length;
 
     let totalSteps = 0;
     let stepsInTolerance = 0;
 
-    batches.forEach((batch) => {
+    batches.forEach(batch => {
       totalSteps += batch.logs.length;
-      stepsInTolerance += batch.logs.filter((l) => isWithinTolerance(l)).length;
+      stepsInTolerance += batch.logs.filter(l => isWithinTolerance(l)).length;
     });
 
-    const overallToleranceRate = totalSteps > 0 ? ((stepsInTolerance / totalSteps) * 100).toFixed(2) : '0';
-    const completionRate = totalBatches > 0 ? ((completedBatches / totalBatches) * 100).toFixed(2) : '0';
+    const overallToleranceRate =
+      totalSteps > 0 ? ((stepsInTolerance / totalSteps) * 100).toFixed(2) : '0';
+    const completionRate =
+      totalBatches > 0 ? ((completedBatches / totalBatches) * 100).toFixed(2) : '0';
 
     // Top materials used
-    const materialUsage: { [key: number]: { name: string; code: string; count: number; totalWeight: number } } = {};
-    batches.forEach((batch) => {
-      batch.logs.forEach((log) => {
+    const materialUsage: {
+      [key: number]: { name: string; code: string; count: number; totalWeight: number };
+    } = {};
+    batches.forEach(batch => {
+      batch.logs.forEach(log => {
         if (!materialUsage[log.materialId]) {
           materialUsage[log.materialId] = {
             name: log.material.name,

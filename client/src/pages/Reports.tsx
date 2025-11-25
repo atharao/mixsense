@@ -133,7 +133,7 @@ const Reports: React.FC = () => {
               className="input"
               placeholder="e.g., 123"
               value={filters.batchId}
-              onChange={(e) => setFilters({ ...filters, batchId: e.target.value })}
+              onChange={e => setFilters({ ...filters, batchId: e.target.value })}
             />
           </div>
 
@@ -142,10 +142,10 @@ const Reports: React.FC = () => {
             <select
               className="input"
               value={filters.recipeId}
-              onChange={(e) => setFilters({ ...filters, recipeId: e.target.value })}
+              onChange={e => setFilters({ ...filters, recipeId: e.target.value })}
             >
               <option value="">All recipes</option>
-              {recipes.map((recipe) => (
+              {recipes.map(recipe => (
                 <option key={recipe.id} value={recipe.id}>
                   {recipe.name}
                 </option>
@@ -159,7 +159,7 @@ const Reports: React.FC = () => {
               type="date"
               className="input"
               value={filters.startDate}
-              onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
+              onChange={e => setFilters({ ...filters, startDate: e.target.value })}
             />
           </div>
 
@@ -169,7 +169,7 @@ const Reports: React.FC = () => {
               type="date"
               className="input"
               value={filters.endDate}
-              onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
+              onChange={e => setFilters({ ...filters, endDate: e.target.value })}
             />
           </div>
         </div>
@@ -211,7 +211,7 @@ const Reports: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {batches.map((batch) => (
+                {batches.map(batch => (
                   <tr key={batch.id}>
                     <td className="font-mono font-semibold">#{batch.id}</td>
                     <td>{batch.recipe?.name}</td>
@@ -223,9 +223,7 @@ const Reports: React.FC = () => {
                       {new Date(batch.startTime).toLocaleString()}
                     </td>
                     <td className="text-sm text-gray-500">
-                      {batch.endTime
-                        ? new Date(batch.endTime).toLocaleString()
-                        : '-'}
+                      {batch.endTime ? new Date(batch.endTime).toLocaleString() : '-'}
                     </td>
                     <td className="text-center">{batch.logs?.length || 0}</td>
                     <td>
@@ -255,7 +253,7 @@ const Reports: React.FC = () => {
       {/* Batch Details Modal */}
       {selectedBatch && (
         <div className="modal-overlay" onClick={() => setSelectedBatch(null)}>
-          <div className="modal-content max-w-5xl" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content max-w-5xl" onClick={e => e.stopPropagation()}>
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <div>
@@ -282,9 +280,7 @@ const Reports: React.FC = () => {
                 <div>
                   <p className="text-sm text-gray-500">Completed</p>
                   <p className="font-semibold text-sm">
-                    {selectedBatch.endTime
-                      ? new Date(selectedBatch.endTime).toLocaleString()
-                      : '-'}
+                    {selectedBatch.endTime ? new Date(selectedBatch.endTime).toLocaleString() : '-'}
                   </p>
                 </div>
                 <div>
@@ -312,7 +308,7 @@ const Reports: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {selectedBatch.logs?.map((log) => (
+                      {selectedBatch.logs?.map(log => (
                         <tr key={log.id}>
                           <td className="font-semibold">{log.step?.stepOrder}</td>
                           <td>{log.material?.name}</td>
@@ -357,7 +353,7 @@ const Reports: React.FC = () => {
                   <div>
                     <p className="text-sm text-gray-500">In Tolerance</p>
                     <p className="text-2xl font-bold text-success-600">
-                      {selectedBatch.logs?.filter((l) => isWithinTolerance(l)).length || 0}
+                      {selectedBatch.logs?.filter(l => isWithinTolerance(l)).length || 0}
                     </p>
                   </div>
                   <div>
@@ -365,7 +361,7 @@ const Reports: React.FC = () => {
                     <p className="text-2xl font-bold text-primary-600">
                       {selectedBatch.logs && selectedBatch.logs.length > 0
                         ? (
-                            (selectedBatch.logs.filter((l) => isWithinTolerance(l)).length /
+                            (selectedBatch.logs.filter(l => isWithinTolerance(l)).length /
                               selectedBatch.logs.length) *
                             100
                           ).toFixed(1)
@@ -380,10 +376,7 @@ const Reports: React.FC = () => {
                 <button onClick={() => setSelectedBatch(null)} className="btn-secondary">
                   Close
                 </button>
-                <button
-                  onClick={() => handleExportPDF(selectedBatch.id)}
-                  className="btn-success"
-                >
+                <button onClick={() => handleExportPDF(selectedBatch.id)} className="btn-success">
                   📄 Export PDF
                 </button>
               </div>

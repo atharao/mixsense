@@ -70,7 +70,9 @@ export class MaterialsService {
       },
     });
 
-    logger.info(`Material created: ${material.name} (${material.code}) by user ${data.createdByUserId}`);
+    logger.info(
+      `Material created: ${material.name} (${material.code}) by user ${data.createdByUserId}`,
+    );
 
     return material;
   }

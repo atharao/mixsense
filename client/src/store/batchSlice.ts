@@ -46,7 +46,7 @@ const batchSlice = createSlice({
       state.isQRValidated = false;
       state.isWithinTolerance = false;
     },
-    endBatch: (state) => {
+    endBatch: state => {
       state.activeBatch = null;
       state.currentRecipe = null;
       state.currentStepIndex = 0;
@@ -60,7 +60,7 @@ const batchSlice = createSlice({
         timestamp: 0,
       };
     },
-    nextStep: (state) => {
+    nextStep: state => {
       if (state.currentRecipe && state.currentStepIndex < state.currentRecipe.steps!.length - 1) {
         state.currentStepIndex += 1;
         state.scannedQRCode = null;
@@ -102,7 +102,7 @@ const batchSlice = createSlice({
     addLogEntry: (state, action: PayloadAction<BatchLog>) => {
       state.localHistory.push(action.payload);
     },
-    clearBatchState: (_state) => {
+    clearBatchState: _state => {
       return initialState;
     },
   },

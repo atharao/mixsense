@@ -13,7 +13,11 @@ router.use(authenticate);
  * GET /api/reports/statistics
  * Get aggregated statistics (admin only)
  */
-router.get('/statistics', requireRole('ADMIN'), reportsController.getStatistics.bind(reportsController));
+router.get(
+  '/statistics',
+  requireRole('ADMIN'),
+  reportsController.getStatistics.bind(reportsController),
+);
 
 /**
  * GET /api/reports/excel

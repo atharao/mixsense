@@ -37,7 +37,7 @@ const recipesSlice = createSlice({
       state.recipes.push(action.payload);
     },
     updateRecipe: (state, action: PayloadAction<Recipe>) => {
-      const index = state.recipes.findIndex((r) => r.id === action.payload.id);
+      const index = state.recipes.findIndex(r => r.id === action.payload.id);
       if (index !== -1) {
         state.recipes[index] = action.payload;
       }
@@ -46,12 +46,12 @@ const recipesSlice = createSlice({
       }
     },
     deleteRecipe: (state, action: PayloadAction<number>) => {
-      state.recipes = state.recipes.filter((r) => r.id !== action.payload);
+      state.recipes = state.recipes.filter(r => r.id !== action.payload);
       if (state.selectedRecipe?.id === action.payload) {
         state.selectedRecipe = null;
       }
     },
-    clearRecipes: (state) => {
+    clearRecipes: state => {
       state.recipes = [];
       state.selectedRecipe = null;
       state.loading = false;

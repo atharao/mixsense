@@ -78,7 +78,7 @@ export const useQrScanner = (config: QRScannerConfig = DEFAULT_CONFIG) => {
           code.location.topLeftCorner.x,
           code.location.topLeftCorner.y,
           code.location.bottomRightCorner.x - code.location.topLeftCorner.x,
-          code.location.bottomRightCorner.y - code.location.topLeftCorner.y
+          code.location.bottomRightCorner.y - code.location.topLeftCorner.y,
         );
       }
     }
@@ -113,7 +113,7 @@ export const useQrScanner = (config: QRScannerConfig = DEFAULT_CONFIG) => {
         videoElement.srcObject = stream;
 
         // Wait for video to be ready
-        await new Promise<void>((resolve) => {
+        await new Promise<void>(resolve => {
           videoElement.onloadedmetadata = () => {
             videoElement.play();
             setCameraReady(true);
@@ -148,7 +148,7 @@ export const useQrScanner = (config: QRScannerConfig = DEFAULT_CONFIG) => {
         return false;
       }
     },
-    [config, scanFrame]
+    [config, scanFrame],
   );
 
   /**
@@ -163,7 +163,7 @@ export const useQrScanner = (config: QRScannerConfig = DEFAULT_CONFIG) => {
 
     // Stop media stream
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
 
@@ -194,7 +194,7 @@ export const useQrScanner = (config: QRScannerConfig = DEFAULT_CONFIG) => {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
 
-        reader.onload = (e) => {
+        reader.onload = e => {
           const img = new Image();
 
           img.onload = () => {
@@ -243,7 +243,7 @@ export const useQrScanner = (config: QRScannerConfig = DEFAULT_CONFIG) => {
         reader.readAsDataURL(file);
       });
     },
-    [dispatch]
+    [dispatch],
   );
 
   /**

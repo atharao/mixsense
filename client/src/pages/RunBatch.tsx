@@ -12,7 +12,8 @@ import { useQrScanner } from '../hooks/useQrScanner';
 const RunBatch: React.FC = () => {
   const dispatch = useDispatch();
   const { user } = useSelector((state: RootState) => state.auth);
-  const { activeBatch, currentRecipe, currentStepIndex, loadCellData, isWithinTolerance } = useSelector((state: RootState) => state.batch);
+  const { activeBatch, currentRecipe, currentStepIndex, loadCellData, isWithinTolerance } =
+    useSelector((state: RootState) => state.batch);
   const { recipes } = useSelector((state: RootState) => state.recipes);
 
   const [selectedRecipeId, setSelectedRecipeId] = useState<number>(0);
@@ -25,8 +26,23 @@ const RunBatch: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const { isConnected, error: loadCellError, currentWeight, isStable, connect, disconnect, tare } = useLoadCell();
-  const { isScanning, error: _qrError, lastScannedCode, startScanning, stopScanning, reset: resetQr } = useQrScanner();
+  const {
+    isConnected,
+    error: loadCellError,
+    currentWeight,
+    isStable,
+    connect,
+    disconnect,
+    tare,
+  } = useLoadCell();
+  const {
+    isScanning,
+    error: _qrError,
+    lastScannedCode,
+    startScanning,
+    stopScanning,
+    reset: resetQr,
+  } = useQrScanner();
 
   useEffect(() => {
     loadRecipes();
@@ -222,16 +238,14 @@ const RunBatch: React.FC = () => {
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Recipe
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Select Recipe</label>
               <select
                 className="input"
                 value={selectedRecipeId}
-                onChange={(e) => setSelectedRecipeId(parseInt(e.target.value))}
+                onChange={e => setSelectedRecipeId(parseInt(e.target.value))}
               >
                 <option value={0}>Choose a recipe...</option>
-                {recipes.map((recipe) => (
+                {recipes.map(recipe => (
                   <option key={recipe.id} value={recipe.id}>
                     {recipe.name} ({recipe.steps?.length || 0} steps)
                   </option>
@@ -249,9 +263,7 @@ const RunBatch: React.FC = () => {
                   <button onClick={connect} className="btn-primary">
                     Connect Load Cell
                   </button>
-                  {loadCellError && (
-                    <p className="text-sm text-danger-600 mt-2">{loadCellError}</p>
-                  )}
+                  {loadCellError && <p className="text-sm text-danger-600 mt-2">{loadCellError}</p>}
                 </div>
               ) : (
                 <div className="bg-success-50 border border-success-200 rounded-lg p-4">
@@ -327,7 +339,9 @@ const RunBatch: React.FC = () => {
                   </div>
                   <div>
                     <p className="text-gray-500">Tolerance</p>
-                    <p className="text-2xl font-bold text-warning-600">±{currentStep.tolerancePercent}%</p>
+                    <p className="text-2xl font-bold text-warning-600">
+                      ±{currentStep.tolerancePercent}%
+                    </p>
                   </div>
                 </div>
 
@@ -359,22 +373,14 @@ const RunBatch: React.FC = () => {
                   <>
                     <button
                       onClick={() => setShowQrScanner(!showQrScanner)}
-                      className={`w-full mb-2 ${
-                        showQrScanner ? 'btn-danger' : 'btn-primary'
-                      }`}
+                      className={`w-full mb-2 ${showQrScanner ? 'btn-danger' : 'btn-primary'}`}
                     >
                       {showQrScanner ? 'Close QR Scanner' : '📱 Scan QR Code (Required)'}
                     </button>
 
                     {showQrScanner && (
                       <div className="border-2 border-gray-300 rounded-lg overflow-hidden">
-                        <video
-                          ref={videoRef}
-                          className="w-full"
-                          autoPlay
-                          playsInline
-                          muted
-                        />
+                        <video ref={videoRef} className="w-full" autoPlay playsInline muted />
                         <canvas ref={canvasRef} className="hidden" />
                       </div>
                     )}
@@ -389,7 +395,9 @@ const RunBatch: React.FC = () => {
                 )}
 
                 {qrValidationMessage && (
-                  <p className={`text-sm mt-2 font-semibold ${qrValidationMessage.startsWith('✓') ? 'text-success-600' : 'text-danger-600'}`}>
+                  <p
+                    className={`text-sm mt-2 font-semibold ${qrValidationMessage.startsWith('✓') ? 'text-success-600' : 'text-danger-600'}`}
+                  >
                     {qrValidationMessage}
                   </p>
                 )}
@@ -405,9 +413,16 @@ const RunBatch: React.FC = () => {
           <h3 className="text-lg font-semibold mb-4">Load Cell Reading</h3>
 
           <div className="text-center py-8">
-            <p className="text-6xl font-bold mb-4" style={{
-              color: isWithinTolerance ? '#22c55e' : currentWeight && currentWeight > 0 ? '#ef4444' : '#6b7280'
-            }}>
+            <p
+              className="text-6xl font-bold mb-4"
+              style={{
+                color: isWithinTolerance
+                  ? '#22c55e'
+                  : currentWeight && currentWeight > 0
+                    ? '#ef4444'
+                    : '#6b7280',
+              }}
+            >
               {currentWeight?.toFixed(2) || '0.00'}
               <span className="text-3xl text-gray-400 ml-2">g</span>
             </p>
@@ -419,13 +434,13 @@ const RunBatch: React.FC = () => {
                 <span className="badge-warning">Stabilizing...</span>
               )}
 
-              {currentWeight !== null && currentStep && (
-                isWithinTolerance ? (
+              {currentWeight !== null &&
+                currentStep &&
+                (isWithinTolerance ? (
                   <span className="badge-success">✓ Within Tolerance</span>
                 ) : (
                   <span className="badge-danger">Out of Tolerance</span>
-                )
-              )}
+                ))}
             </div>
 
             <div className="max-w-md mx-auto mb-6">
@@ -433,9 +448,10 @@ const RunBatch: React.FC = () => {
                 <div
                   className={`h-full transition-all ${isWithinTolerance ? 'bg-success-600' : 'bg-danger-600'}`}
                   style={{
-                    width: currentStep && currentWeight
-                      ? `${Math.min((currentWeight / currentStep.setpoint) * 100, 100)}%`
-                      : '0%',
+                    width:
+                      currentStep && currentWeight
+                        ? `${Math.min((currentWeight / currentStep.setpoint) * 100, 100)}%`
+                        : '0%',
                   }}
                 />
               </div>

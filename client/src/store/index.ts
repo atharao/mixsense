@@ -13,7 +13,7 @@ export const store = configureStore({
     recipes: recipesReducer,
     materials: materialsReducer,
   },
-  middleware: (getDefaultMiddleware) =>
+  middleware: getDefaultMiddleware =>
     getDefaultMiddleware({
       serializableCheck: {
         // Ignore these action types

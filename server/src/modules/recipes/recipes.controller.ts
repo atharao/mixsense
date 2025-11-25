@@ -120,7 +120,7 @@ export class RecipesController {
       const recipe = await recipesService.createRecipe({
         name,
         steps,
-        createdByUserId: userId
+        createdByUserId: userId,
       });
 
       return res.status(201).json({

@@ -1,0 +1,19 @@
+{
+  "name": "mixsense-root",
+  "private": true,
+  "scripts": {
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "husky": "^8.0.0",
+    "lint-staged": "^15.2.0"
+  },
+  "lint-staged": {
+    "client/**/*.{ts,tsx}": [
+      "npm run lint --prefix client"
+    ],
+    "server/**/*.ts": [
+      "npm run lint --prefix server"
+    ]
+  }
+}

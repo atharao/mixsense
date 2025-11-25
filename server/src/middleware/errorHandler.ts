@@ -13,7 +13,7 @@ export const errorHandler = (
   err: Error,
   req: Request,
   res: Response,
-  _next: NextFunction
+  _next: NextFunction,
 ): void => {
   logger.error('Error caught by error handler:', {
     error: err.message,
@@ -52,10 +52,7 @@ export const errorHandler = (
   res.status(statusCode).json(response);
 };
 
-const handlePrismaError = (
-  err: Prisma.PrismaClientKnownRequestError,
-  res: Response
-): void => {
+const handlePrismaError = (err: Prisma.PrismaClientKnownRequestError, res: Response): void => {
   switch (err.code) {
     case 'P2002':
       // Unique constraint violation
@@ -101,11 +98,7 @@ const handlePrismaError = (
 };
 
 // 404 handler
-export const notFoundHandler = (
-  req: Request,
-  res: Response,
-  _next: NextFunction
-): void => {
+export const notFoundHandler = (req: Request, res: Response, _next: NextFunction): void => {
   res.status(404).json({
     success: false,
     message: `Route ${req.method} ${req.path} not found`,

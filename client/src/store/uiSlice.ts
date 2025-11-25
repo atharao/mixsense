@@ -40,9 +40,9 @@ const uiSlice = createSlice({
       state.toasts.push(toast);
     },
     hideToast: (state, action: PayloadAction<string>) => {
-      state.toasts = state.toasts.filter((toast) => toast.id !== action.payload);
+      state.toasts = state.toasts.filter(toast => toast.id !== action.payload);
     },
-    clearToasts: (state) => {
+    clearToasts: state => {
       state.toasts = [];
     },
     openModal: (state, action: PayloadAction<{ id: string; data?: any }>) => {
@@ -60,13 +60,20 @@ const uiSlice = createSlice({
     setLoading: (state, action: PayloadAction<{ key: string; loading: boolean }>) => {
       state.loading[action.payload.key] = action.payload.loading;
     },
-    toggleSidebar: (state) => {
+    toggleSidebar: state => {
       state.sidebarOpen = !state.sidebarOpen;
     },
   },
 });
 
-export const { showToast, hideToast, clearToasts, openModal, closeModal, setLoading, toggleSidebar } =
-  uiSlice.actions;
+export const {
+  showToast,
+  hideToast,
+  clearToasts,
+  openModal,
+  closeModal,
+  setLoading,
+  toggleSidebar,
+} = uiSlice.actions;
 
 export default uiSlice.reducer;

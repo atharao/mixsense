@@ -1,13 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../store';
-import { setMaterials, addMaterial, updateMaterial, deleteMaterial, setLoading } from '../store/materialsSlice';
+import {
+  setMaterials,
+  addMaterial,
+  updateMaterial,
+  deleteMaterial,
+  setLoading,
+} from '../store/materialsSlice';
 import { materialsApi } from '../api/materials.api';
 import { Material } from '../types/models';
 
 const Materials: React.FC = () => {
   const dispatch = useDispatch();
-  const { materials, ingredients, equipment, loading } = useSelector((state: RootState) => state.materials);
+  const { materials, ingredients, equipment, loading } = useSelector(
+    (state: RootState) => state.materials,
+  );
 
   const [showModal, setShowModal] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
@@ -90,13 +98,14 @@ const Materials: React.FC = () => {
   };
 
   const filteredMaterials = materials
-    .filter((m) => {
+    .filter(m => {
       if (filter === 'ALL') return true;
       return m.type === filter;
     })
-    .filter((m) =>
-      m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      m.code.toLowerCase().includes(searchQuery.toLowerCase())
+    .filter(
+      m =>
+        m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        m.code.toLowerCase().includes(searchQuery.toLowerCase()),
     );
 
   return (
@@ -137,7 +146,7 @@ const Materials: React.FC = () => {
               placeholder="Search by name or code..."
               className="input"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={e => setSearchQuery(e.target.value)}
             />
           </div>
           <div className="flex gap-2">
@@ -202,7 +211,7 @@ const Materials: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredMaterials.map((material) => (
+                {filteredMaterials.map(material => (
                   <tr key={material.id}>
                     <td className="font-mono font-semibold">{material.code}</td>
                     <td>{material.name}</td>
@@ -243,7 +252,7 @@ const Materials: React.FC = () => {
       {/* Modal */}
       {showModal && (
         <div className="modal-overlay" onClick={handleCloseModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div className="p-6">
               <h3 className="text-xl font-bold mb-4">
                 {editingMaterial ? 'Edit Material' : 'Add New Material'}
@@ -258,7 +267,7 @@ const Materials: React.FC = () => {
                     type="text"
                     className="input"
                     value={formData.code}
-                    onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                    onChange={e => setFormData({ ...formData, code: e.target.value })}
                     required
                     placeholder="e.g., MAT-001"
                   />
@@ -272,7 +281,7 @@ const Materials: React.FC = () => {
                     type="text"
                     className="input"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={e => setFormData({ ...formData, name: e.target.value })}
                     required
                     placeholder="e.g., Flour"
                   />
@@ -283,8 +292,11 @@ const Materials: React.FC = () => {
                   <select
                     className="input"
                     value={formData.type}
-                    onChange={(e) =>
-                      setFormData({ ...formData, type: e.target.value as 'INGREDIENT' | 'EQUIPMENT' })
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        type: e.target.value as 'INGREDIENT' | 'EQUIPMENT',
+                      })
                     }
                     required
                   >

@@ -8,11 +8,13 @@ const qrService = new QRService();
 function transformRecipe(recipe: any) {
   return {
     ...recipe,
-    steps: recipe.steps?.map((step: RecipeStep & { material?: Material; equipment?: Material | null }) => ({
-      ...step,
-      setpoint: Number(step.setpoint),
-      tolerancePercent: Number(step.tolerancePercent),
-    })),
+    steps: recipe.steps?.map(
+      (step: RecipeStep & { material?: Material; equipment?: Material | null }) => ({
+        ...step,
+        setpoint: Number(step.setpoint),
+        tolerancePercent: Number(step.tolerancePercent),
+      }),
+    ),
   };
 }
 
@@ -82,7 +84,7 @@ export class RecipesService {
     }>;
   }) {
     // Validate that all materials exist
-    const materialIds = data.steps.map((s) => s.materialId);
+    const materialIds = data.steps.map(s => s.materialId);
     const materials = await prisma.material.findMany({
       where: {
         id: { in: materialIds },
@@ -95,7 +97,7 @@ export class RecipesService {
 
     // Validate equipment if provided
     const equipmentIds = data.steps
-      .map((s) => s.equipmentId)
+      .map(s => s.equipmentId)
       .filter((id): id is number => id !== undefined);
 
     if (equipmentIds.length > 0) {
@@ -117,7 +119,7 @@ export class RecipesService {
         name: data.name,
         createdByUserId: data.createdByUserId,
         steps: {
-          create: data.steps.map((step) => ({
+          create: data.steps.map(step => ({
             materialId: step.materialId,
             equipmentId: step.equipmentId,
             stepOrder: step.stepOrder,
@@ -176,7 +178,7 @@ export class RecipesService {
         setpoint: number;
         tolerancePercent: number;
       }>;
-    }
+    },
   ) {
     // Check if recipe exists
     const existingRecipe = await prisma.recipe.findUnique({
@@ -190,7 +192,7 @@ export class RecipesService {
 
     // If steps are being updated, validate materials
     if (data.steps) {
-      const materialIds = data.steps.map((s) => s.materialId);
+      const materialIds = data.steps.map(s => s.materialId);
       const materials = await prisma.material.findMany({
         where: {
           id: { in: materialIds },
@@ -203,7 +205,7 @@ export class RecipesService {
 
       // Validate equipment if provided
       const equipmentIds = data.steps
-        .map((s) => s.equipmentId)
+        .map(s => s.equipmentId)
         .filter((id): id is number => id !== undefined);
 
       if (equipmentIds.length > 0) {
@@ -221,7 +223,7 @@ export class RecipesService {
     }
 
     // Update recipe in a transaction
-    const recipe = await prisma.$transaction(async (tx) => {
+    const recipe = await prisma.$transaction(async tx => {
       // Update recipe name if provided
       await tx.recipe.update({
         where: { id },
@@ -239,7 +241,7 @@ export class RecipesService {
 
         // Create new steps
         await tx.recipeStep.createMany({
-          data: data.steps.map((step) => ({
+          data: data.steps.map(step => ({
             recipeId: id,
             materialId: step.materialId,
             equipmentId: step.equipmentId,
@@ -328,7 +330,7 @@ export class RecipesService {
    */
   private async generateQRCodesForSteps(steps: any[]): Promise<void> {
     await Promise.all(
-      steps.map(async (step) => {
+      steps.map(async step => {
         // Generate QR code for this step
         const { qrCodeImage } = await qrService.generateQRCode({
           materialCode: step.material.code,
@@ -343,7 +345,7 @@ export class RecipesService {
           where: { id: step.id },
           data: { qrCode: qrCodeImage },
         });
-      })
+      }),
     );
   }
 }

@@ -1,5 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
 import { dashboardApi } from '../api/dashboard.api';
 
 const Dashboard: React.FC = () => {
@@ -19,14 +28,15 @@ const Dashboard: React.FC = () => {
 
   const loadDashboardData = async () => {
     try {
-      const [overviewRes, equipmentRes, trendsRes, materialUsageRes, operatorsRes, alertsRes] = await Promise.all([
-        dashboardApi.getOverview(),
-        dashboardApi.getEquipmentStatus(),
-        dashboardApi.getTrends(30),
-        dashboardApi.getMaterialUsage(10),
-        dashboardApi.getOperatorPerformance(),
-        dashboardApi.getAlerts(10),
-      ]);
+      const [overviewRes, equipmentRes, trendsRes, materialUsageRes, operatorsRes, alertsRes] =
+        await Promise.all([
+          dashboardApi.getOverview(),
+          dashboardApi.getEquipmentStatus(),
+          dashboardApi.getTrends(30),
+          dashboardApi.getMaterialUsage(10),
+          dashboardApi.getOperatorPerformance(),
+          dashboardApi.getAlerts(10),
+        ]);
 
       setOverview(overviewRes.data.data);
       setEquipment(equipmentRes.data.data);
@@ -120,8 +130,20 @@ const Dashboard: React.FC = () => {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Line type="monotone" dataKey="completed" stroke="#22c55e" name="Completed" strokeWidth={2} />
-              <Line type="monotone" dataKey="aborted" stroke="#ef4444" name="Aborted" strokeWidth={2} />
+              <Line
+                type="monotone"
+                dataKey="completed"
+                stroke="#22c55e"
+                name="Completed"
+                strokeWidth={2}
+              />
+              <Line
+                type="monotone"
+                dataKey="aborted"
+                stroke="#ef4444"
+                name="Aborted"
+                strokeWidth={2}
+              />
               <Line type="monotone" dataKey="total" stroke="#0ea5e9" name="Total" strokeWidth={2} />
             </LineChart>
           </ResponsiveContainer>
@@ -131,8 +153,11 @@ const Dashboard: React.FC = () => {
         <div className="card">
           <h3 className="text-lg font-semibold mb-4">Equipment Status</h3>
           <div className="space-y-3 max-h-[300px] overflow-y-auto scrollbar-thin">
-            {equipment.map((eq) => (
-              <div key={eq.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            {equipment.map(eq => (
+              <div
+                key={eq.id}
+                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+              >
                 <div className="flex-1">
                   <p className="font-medium">{eq.name}</p>
                   <p className="text-sm text-gray-500">{eq.code}</p>
@@ -179,11 +204,13 @@ const Dashboard: React.FC = () => {
         <div className="card">
           <h3 className="text-lg font-semibold mb-4">Operator Performance</h3>
           <div className="space-y-3 max-h-[300px] overflow-y-auto scrollbar-thin">
-            {operators.map((op) => (
+            {operators.map(op => (
               <div key={op.id} className="p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
                   <p className="font-medium">{op.username}</p>
-                  <span className={`badge ${op.completionRate >= 90 ? 'badge-success' : op.completionRate >= 70 ? 'badge-warning' : 'badge-danger'}`}>
+                  <span
+                    className={`badge ${op.completionRate >= 90 ? 'badge-success' : op.completionRate >= 70 ? 'badge-warning' : 'badge-danger'}`}
+                  >
                     {op.completionRate.toFixed(1)}%
                   </span>
                 </div>
@@ -225,7 +252,7 @@ const Dashboard: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {alerts.map((alert) => (
+                {alerts.map(alert => (
                   <tr key={alert.id}>
                     <td className="font-mono">#{alert.batchId}</td>
                     <td>{alert.batchRecipe}</td>
@@ -235,7 +262,9 @@ const Dashboard: React.FC = () => {
                       <span className="text-xs text-gray-500 block">{alert.materialCode}</span>
                     </td>
                     <td>{alert.setpoint.toFixed(2)}g</td>
-                    <td className="text-danger-600 font-semibold">{alert.actualWeight.toFixed(2)}g</td>
+                    <td className="text-danger-600 font-semibold">
+                      {alert.actualWeight.toFixed(2)}g
+                    </td>
                     <td>
                       <span className="badge-danger">{alert.deviation}%</span>
                     </td>

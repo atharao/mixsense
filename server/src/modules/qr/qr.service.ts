@@ -173,7 +173,9 @@ export class QRService {
   /**
    * Generate QR code for a batch log
    */
-  async generateBatchLogQR(batchLogId: number): Promise<{ qrCodeImage: string; qrCodeData: string }> {
+  async generateBatchLogQR(
+    batchLogId: number,
+  ): Promise<{ qrCodeImage: string; qrCodeData: string }> {
     const log = await prisma.batchLog.findUnique({
       where: { id: batchLogId },
       include: {
@@ -247,7 +249,7 @@ export class QRService {
     }
 
     const qrCodes = await Promise.all(
-      recipe.steps.map(async (step) => {
+      recipe.steps.map(async step => {
         const { qrCodeImage, qrCodeData } = await this.generateQRCode({
           materialCode: step.material.code,
           materialName: step.material.name,
@@ -263,7 +265,7 @@ export class QRService {
           qrCodeImage,
           qrCodeData,
         };
-      })
+      }),
     );
 
     return qrCodes;
@@ -272,10 +274,7 @@ export class QRService {
   /**
    * Validate QR code from a processed batch
    */
-  async validateProcessedBatchQR(data: {
-    qrCode: string;
-    expectedStepId: number;
-  }): Promise<{
+  async validateProcessedBatchQR(data: { qrCode: string; expectedStepId: number }): Promise<{
     valid: boolean;
     message: string;
     data?: QRCodeData;

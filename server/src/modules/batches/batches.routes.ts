@@ -19,7 +19,11 @@ router.get('/active', batchesController.getActiveBatch.bind(batchesController));
  * GET /api/batches/statistics
  * Get batch statistics (admin only)
  */
-router.get('/statistics', requireRole('ADMIN'), batchesController.getStatistics.bind(batchesController));
+router.get(
+  '/statistics',
+  requireRole('ADMIN'),
+  batchesController.getStatistics.bind(batchesController),
+);
 
 /**
  * GET /api/batches/processed

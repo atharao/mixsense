@@ -3,11 +3,7 @@ import { AuthService } from './auth.service';
 
 const authService = new AuthService();
 
-export const login = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
+export const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { username, password } = req.body;
 
@@ -38,11 +34,7 @@ export const login = async (
   }
 };
 
-export const me = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
+export const me = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     if (!req.user) {
       res.status(401).json({
@@ -66,7 +58,7 @@ export const me = async (
 export const createUser = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const { username, password, role } = req.body;
@@ -102,7 +94,7 @@ export const createUser = async (
 export const changePassword = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     if (!req.user) {
@@ -149,11 +141,7 @@ export const changePassword = async (
   }
 };
 
-export const logout = async (
-  _req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
+export const logout = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     // Since we're using JWT, logout is handled client-side by removing the token
     // This endpoint is here for consistency and future enhancements (e.g., token blacklisting)
@@ -170,7 +158,7 @@ export const logout = async (
 export const getAllUsers = async (
   _req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const users = await authService.getAllUsers();
@@ -187,7 +175,7 @@ export const getAllUsers = async (
 export const deleteUser = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const userId = parseInt(req.params.id);
@@ -230,7 +218,7 @@ export const deleteUser = async (
 export const updateUser = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const userId = parseInt(req.params.id);

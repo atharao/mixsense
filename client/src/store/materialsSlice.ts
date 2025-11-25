@@ -31,8 +31,8 @@ const materialsSlice = createSlice({
     },
     setMaterials: (state, action: PayloadAction<Material[]>) => {
       state.materials = action.payload;
-      state.ingredients = action.payload.filter((m) => m.type === 'INGREDIENT');
-      state.equipment = action.payload.filter((m) => m.type === 'EQUIPMENT');
+      state.ingredients = action.payload.filter(m => m.type === 'INGREDIENT');
+      state.equipment = action.payload.filter(m => m.type === 'EQUIPMENT');
       state.loading = false;
       state.error = null;
     },
@@ -48,7 +48,7 @@ const materialsSlice = createSlice({
       }
     },
     updateMaterial: (state, action: PayloadAction<Material>) => {
-      const index = state.materials.findIndex((m) => m.id === action.payload.id);
+      const index = state.materials.findIndex(m => m.id === action.payload.id);
       if (index !== -1) {
         const oldType = state.materials[index].type;
         state.materials[index] = action.payload;
@@ -57,9 +57,9 @@ const materialsSlice = createSlice({
         if (oldType !== action.payload.type) {
           // Remove from old type array
           if (oldType === 'INGREDIENT') {
-            state.ingredients = state.ingredients.filter((m) => m.id !== action.payload.id);
+            state.ingredients = state.ingredients.filter(m => m.id !== action.payload.id);
           } else if (oldType === 'EQUIPMENT') {
-            state.equipment = state.equipment.filter((m) => m.id !== action.payload.id);
+            state.equipment = state.equipment.filter(m => m.id !== action.payload.id);
           }
 
           // Add to new type array
@@ -71,12 +71,12 @@ const materialsSlice = createSlice({
         } else {
           // Update within same type array
           if (action.payload.type === 'INGREDIENT') {
-            const ingIndex = state.ingredients.findIndex((m) => m.id === action.payload.id);
+            const ingIndex = state.ingredients.findIndex(m => m.id === action.payload.id);
             if (ingIndex !== -1) {
               state.ingredients[ingIndex] = action.payload;
             }
           } else if (action.payload.type === 'EQUIPMENT') {
-            const eqIndex = state.equipment.findIndex((m) => m.id === action.payload.id);
+            const eqIndex = state.equipment.findIndex(m => m.id === action.payload.id);
             if (eqIndex !== -1) {
               state.equipment[eqIndex] = action.payload;
             }
@@ -89,20 +89,20 @@ const materialsSlice = createSlice({
       }
     },
     deleteMaterial: (state, action: PayloadAction<number>) => {
-      const material = state.materials.find((m) => m.id === action.payload);
-      state.materials = state.materials.filter((m) => m.id !== action.payload);
+      const material = state.materials.find(m => m.id === action.payload);
+      state.materials = state.materials.filter(m => m.id !== action.payload);
 
       if (material?.type === 'INGREDIENT') {
-        state.ingredients = state.ingredients.filter((m) => m.id !== action.payload);
+        state.ingredients = state.ingredients.filter(m => m.id !== action.payload);
       } else if (material?.type === 'EQUIPMENT') {
-        state.equipment = state.equipment.filter((m) => m.id !== action.payload);
+        state.equipment = state.equipment.filter(m => m.id !== action.payload);
       }
 
       if (state.selectedMaterial?.id === action.payload) {
         state.selectedMaterial = null;
       }
     },
-    clearMaterials: (state) => {
+    clearMaterials: state => {
       state.materials = [];
       state.ingredients = [];
       state.equipment = [];

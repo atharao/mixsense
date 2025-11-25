@@ -3,7 +3,9 @@ import { PrismaClient, BatchStatus, RecipeStep, Material } from '@prisma/client'
 const prisma = new PrismaClient();
 
 // Helper function to transform recipe steps and convert Decimal to number
-function transformRecipeSteps(steps: (RecipeStep & { material?: Material; equipment?: Material | null })[]) {
+function transformRecipeSteps(
+  steps: (RecipeStep & { material?: Material; equipment?: Material | null })[],
+) {
   return steps.map(step => ({
     ...step,
     setpoint: Number(step.setpoint),
@@ -15,20 +17,24 @@ function transformRecipeSteps(steps: (RecipeStep & { material?: Material; equipm
 function transformBatch(batch: any) {
   return {
     ...batch,
-    recipe: batch.recipe ? {
-      ...batch.recipe,
-      steps: batch.recipe.steps ? transformRecipeSteps(batch.recipe.steps) : [],
-    } : undefined,
+    recipe: batch.recipe
+      ? {
+          ...batch.recipe,
+          steps: batch.recipe.steps ? transformRecipeSteps(batch.recipe.steps) : [],
+        }
+      : undefined,
     logs: batch.logs?.map((log: any) => ({
       ...log,
       actualWeight: Number(log.actualWeight),
       setpointSnapshot: Number(log.setpointSnapshot),
       toleranceSnapshot: Number(log.toleranceSnapshot),
-      step: log.step ? {
-        ...log.step,
-        setpoint: Number(log.step.setpoint),
-        tolerancePercent: Number(log.step.tolerancePercent),
-      } : undefined,
+      step: log.step
+        ? {
+            ...log.step,
+            setpoint: Number(log.step.setpoint),
+            tolerancePercent: Number(log.step.tolerancePercent),
+          }
+        : undefined,
     })),
   };
 }
@@ -257,7 +263,7 @@ export class BatchesService {
       setpointSnapshot: number;
       toleranceSnapshot: number;
       scannedQrCode?: string;
-    }
+    },
   ) {
     // Validate batch exists and is in progress
     const batch = await prisma.batch.findUnique({
@@ -280,7 +286,7 @@ export class BatchesService {
     }
 
     // Validate step exists in the batch's recipe
-    const step = batch.recipe.steps.find((s) => s.id === data.stepId);
+    const step = batch.recipe.steps.find(s => s.id === data.stepId);
     if (!step) {
       throw new Error('Step not found in batch recipe');
     }
@@ -332,11 +338,13 @@ export class BatchesService {
       actualWeight: Number(log.actualWeight),
       setpointSnapshot: Number(log.setpointSnapshot),
       toleranceSnapshot: Number(log.toleranceSnapshot),
-      step: log.step ? {
-        ...log.step,
-        setpoint: Number(log.step.setpoint),
-        tolerancePercent: Number(log.step.tolerancePercent),
-      } : undefined,
+      step: log.step
+        ? {
+            ...log.step,
+            setpoint: Number(log.step.setpoint),
+            tolerancePercent: Number(log.step.tolerancePercent),
+          }
+        : undefined,
     };
   }
 
@@ -367,14 +375,14 @@ export class BatchesService {
 
     // If completing, validate all steps are logged
     if (data.status === 'COMPLETED') {
-      const recipeStepIds = batch.recipe.steps.map((s) => s.id);
-      const loggedStepIds = new Set(batch.logs.map((l) => l.stepId));
+      const recipeStepIds = batch.recipe.steps.map(s => s.id);
+      const loggedStepIds = new Set(batch.logs.map(l => l.stepId));
 
-      const missingSteps = recipeStepIds.filter((id) => !loggedStepIds.has(id));
+      const missingSteps = recipeStepIds.filter(id => !loggedStepIds.has(id));
 
       if (missingSteps.length > 0) {
         throw new Error(
-          `Cannot complete batch: steps ${missingSteps.join(', ')} have not been logged`
+          `Cannot complete batch: steps ${missingSteps.join(', ')} have not been logged`,
         );
       }
     }
@@ -630,7 +638,7 @@ export class BatchesService {
       setpointSnapshot: number;
       toleranceSnapshot: number;
       generatedQrCode: string;
-    }
+    },
   ) {
     // Validate batch exists and is in progress
     const batch = await prisma.batch.findUnique({
@@ -653,7 +661,7 @@ export class BatchesService {
     }
 
     // Validate step exists in the batch's recipe
-    const step = batch.recipe.steps.find((s) => s.id === data.stepId);
+    const step = batch.recipe.steps.find(s => s.id === data.stepId);
     if (!step) {
       throw new Error('Step not found in batch recipe');
     }
@@ -699,11 +707,13 @@ export class BatchesService {
       actualWeight: Number(log.actualWeight),
       setpointSnapshot: Number(log.setpointSnapshot),
       toleranceSnapshot: Number(log.toleranceSnapshot),
-      step: log.step ? {
-        ...log.step,
-        setpoint: Number(log.step.setpoint),
-        tolerancePercent: Number(log.step.tolerancePercent),
-      } : undefined,
+      step: log.step
+        ? {
+            ...log.step,
+            setpoint: Number(log.step.setpoint),
+            tolerancePercent: Number(log.step.tolerancePercent),
+          }
+        : undefined,
     };
   }
 
@@ -733,14 +743,14 @@ export class BatchesService {
     }
 
     // Validate all steps are logged
-    const recipeStepIds = batch.recipe.steps.map((s) => s.id);
-    const loggedStepIds = new Set(batch.logs.map((l) => l.stepId));
+    const recipeStepIds = batch.recipe.steps.map(s => s.id);
+    const loggedStepIds = new Set(batch.logs.map(l => l.stepId));
 
-    const missingSteps = recipeStepIds.filter((id) => !loggedStepIds.has(id));
+    const missingSteps = recipeStepIds.filter(id => !loggedStepIds.has(id));
 
     if (missingSteps.length > 0) {
       throw new Error(
-        `Cannot complete process batch: steps ${missingSteps.join(', ')} have not been logged`
+        `Cannot complete process batch: steps ${missingSteps.join(', ')} have not been logged`,
       );
     }
 

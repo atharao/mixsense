@@ -154,8 +154,14 @@ export class BatchesController {
         });
       }
 
-      const { stepId, materialId, actualWeight, setpointSnapshot, toleranceSnapshot, scannedQrCode } =
-        req.body;
+      const {
+        stepId,
+        materialId,
+        actualWeight,
+        setpointSnapshot,
+        toleranceSnapshot,
+        scannedQrCode,
+      } = req.body;
 
       // Validation
       if (
@@ -167,7 +173,8 @@ export class BatchesController {
       ) {
         return res.status(400).json({
           success: false,
-          message: 'stepId, materialId, actualWeight, setpointSnapshot, and toleranceSnapshot are required',
+          message:
+            'stepId, materialId, actualWeight, setpointSnapshot, and toleranceSnapshot are required',
         });
       }
 
@@ -401,8 +408,14 @@ export class BatchesController {
         });
       }
 
-      const { stepId, materialId, actualWeight, setpointSnapshot, toleranceSnapshot, generatedQrCode } =
-        req.body;
+      const {
+        stepId,
+        materialId,
+        actualWeight,
+        setpointSnapshot,
+        toleranceSnapshot,
+        generatedQrCode,
+      } = req.body;
 
       // Validation
       if (

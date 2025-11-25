@@ -7,14 +7,15 @@ const materialsService = new MaterialsService();
 export const listMaterials = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const { type } = req.query;
 
-    const validType = type && ['INGREDIENT', 'EQUIPMENT'].includes(type as string)
-      ? (type as MaterialType)
-      : undefined;
+    const validType =
+      type && ['INGREDIENT', 'EQUIPMENT'].includes(type as string)
+        ? (type as MaterialType)
+        : undefined;
 
     const materials = await materialsService.getAllMaterials(validType);
 
@@ -31,7 +32,7 @@ export const listMaterials = async (
 export const getMaterial = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const { id } = req.params;
@@ -66,7 +67,7 @@ export const getMaterial = async (
 export const createMaterial = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const { name, code, type } = req.body;
@@ -115,7 +116,7 @@ export const createMaterial = async (
 export const updateMaterial = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const { id } = req.params;
@@ -165,7 +166,7 @@ export const updateMaterial = async (
 export const deleteMaterial = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const { id } = req.params;
@@ -212,7 +213,7 @@ export const deleteMaterial = async (
 export const getMaterialByCode = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const { code } = req.params;
@@ -239,7 +240,7 @@ export const getMaterialByCode = async (
 export const getIngredients = async (
   _req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const ingredients = await materialsService.getIngredients();
@@ -257,7 +258,7 @@ export const getIngredients = async (
 export const getEquipment = async (
   _req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const equipment = await materialsService.getEquipment();

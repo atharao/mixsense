@@ -32,7 +32,7 @@ const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    loginStart: (state) => {
+    loginStart: state => {
       state.loading = true;
     },
     loginSuccess: (state, action: PayloadAction<{ token: string; user: User }>) => {
@@ -45,13 +45,13 @@ const authSlice = createSlice({
       localStorage.setItem('token', action.payload.token);
       localStorage.setItem('user', JSON.stringify(action.payload.user));
     },
-    loginFailure: (state) => {
+    loginFailure: state => {
       state.loading = false;
       state.token = null;
       state.user = null;
       state.isAuthenticated = false;
     },
-    logout: (state) => {
+    logout: state => {
       state.token = null;
       state.user = null;
       state.isAuthenticated = false;

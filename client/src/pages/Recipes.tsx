@@ -1,7 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../store';
-import { setRecipes, setSelectedRecipe, addRecipe, updateRecipe, deleteRecipe, setLoading } from '../store/recipesSlice';
+import {
+  setRecipes,
+  setSelectedRecipe,
+  addRecipe,
+  updateRecipe,
+  deleteRecipe,
+  setLoading,
+} from '../store/recipesSlice';
 import { setMaterials } from '../store/materialsSlice';
 import { recipesApi } from '../api/recipes.api';
 import { materialsApi } from '../api/materials.api';
@@ -17,7 +24,11 @@ interface StepForm {
 
 const Recipes: React.FC = () => {
   const dispatch = useDispatch();
-  const { recipes, selectedRecipe, loading: _loading } = useSelector((state: RootState) => state.recipes);
+  const {
+    recipes,
+    selectedRecipe,
+    loading: _loading,
+  } = useSelector((state: RootState) => state.recipes);
   const { ingredients, equipment } = useSelector((state: RootState) => state.materials);
   const { user } = useSelector((state: RootState) => state.auth);
 
@@ -77,7 +88,13 @@ const Recipes: React.FC = () => {
     document.body.removeChild(link);
   };
 
-  const handlePrintQR = (stepOrder: number, materialName: string, qrCode: string, setpoint: number, tolerancePercent: number) => {
+  const handlePrintQR = (
+    stepOrder: number,
+    materialName: string,
+    qrCode: string,
+    setpoint: number,
+    tolerancePercent: number,
+  ) => {
     // Create a new window for printing
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
@@ -152,13 +169,13 @@ const Recipes: React.FC = () => {
       setEditingRecipe(recipe);
       setRecipeName(recipe.name);
       setSteps(
-        recipe.steps?.map((step) => ({
+        recipe.steps?.map(step => ({
           materialId: step.materialId,
           equipmentId: step.equipmentId || undefined,
           stepOrder: step.stepOrder,
           setpoint: step.setpoint,
           tolerancePercent: step.tolerancePercent,
-        })) || []
+        })) || [],
       );
     } else {
       setEditingRecipe(null);
@@ -261,7 +278,7 @@ const Recipes: React.FC = () => {
     try {
       const recipeData = {
         name: recipeName,
-        steps: steps.map((step) => ({
+        steps: steps.map(step => ({
           materialId: step.materialId,
           equipmentId: step.equipmentId || undefined,
           stepOrder: step.stepOrder,
@@ -303,8 +320,8 @@ const Recipes: React.FC = () => {
     }
   };
 
-  const filteredRecipes = recipes.filter((r) =>
-    r.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredRecipes = recipes.filter(r =>
+    r.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -339,13 +356,13 @@ const Recipes: React.FC = () => {
           placeholder="Search recipes..."
           className="input"
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={e => setSearchQuery(e.target.value)}
         />
       </div>
 
       {/* Recipes Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredRecipes.map((recipe) => (
+        {filteredRecipes.map(recipe => (
           <div key={recipe.id} className="card hover:shadow-lg transition-shadow">
             <div className="flex items-start justify-between mb-3">
               <h3 className="text-lg font-semibold">{recipe.name}</h3>
@@ -353,7 +370,7 @@ const Recipes: React.FC = () => {
             </div>
 
             <div className="space-y-2 mb-4">
-              {recipe.steps?.slice(0, 3).map((step) => (
+              {recipe.steps?.slice(0, 3).map(step => (
                 <div key={step.id} className="text-sm text-gray-600 flex items-center">
                   <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded mr-2">
                     {step.stepOrder}
@@ -408,12 +425,12 @@ const Recipes: React.FC = () => {
       {/* Recipe Details Modal */}
       {selectedRecipe && !showModal && (
         <div className="modal-overlay" onClick={() => dispatch(setSelectedRecipe(null))}>
-          <div className="modal-content max-w-4xl" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content max-w-4xl" onClick={e => e.stopPropagation()}>
             <div className="p-6">
               <h3 className="text-2xl font-bold mb-4">{selectedRecipe.name}</h3>
 
               <div className="space-y-4">
-                {selectedRecipe.steps?.map((step) => (
+                {selectedRecipe.steps?.map(step => (
                   <div key={step.id} className="border border-gray-200 rounded-lg p-4">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
@@ -434,8 +451,17 @@ const Recipes: React.FC = () => {
                             <span className="text-gray-500">Tolerance:</span>{' '}
                             <span className="font-semibold">±{step.tolerancePercent}%</span>
                             <span className="text-gray-400 ml-2">
-                              ({(step.setpoint - (step.setpoint * step.tolerancePercent) / 100).toFixed(2)}g -{' '}
-                              {(step.setpoint + (step.setpoint * step.tolerancePercent) / 100).toFixed(2)}g)
+                              (
+                              {(
+                                step.setpoint -
+                                (step.setpoint * step.tolerancePercent) / 100
+                              ).toFixed(2)}
+                              g -{' '}
+                              {(
+                                step.setpoint +
+                                (step.setpoint * step.tolerancePercent) / 100
+                              ).toFixed(2)}
+                              g)
                             </span>
                           </p>
                           {step.equipment && (
@@ -457,14 +483,28 @@ const Recipes: React.FC = () => {
                           />
                           <div className="flex gap-2">
                             <button
-                              onClick={() => handleDownloadQR(step.stepOrder, step.material?.name || '', step.qrCode!)}
+                              onClick={() =>
+                                handleDownloadQR(
+                                  step.stepOrder,
+                                  step.material?.name || '',
+                                  step.qrCode!,
+                                )
+                              }
                               className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
                               title="Download QR Code"
                             >
                               📥 Download
                             </button>
                             <button
-                              onClick={() => handlePrintQR(step.stepOrder, step.material?.name || '', step.qrCode!, step.setpoint, step.tolerancePercent)}
+                              onClick={() =>
+                                handlePrintQR(
+                                  step.stepOrder,
+                                  step.material?.name || '',
+                                  step.qrCode!,
+                                  step.setpoint,
+                                  step.tolerancePercent,
+                                )
+                              }
                               className="px-3 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200"
                               title="Print QR Code"
                             >
@@ -479,10 +519,7 @@ const Recipes: React.FC = () => {
               </div>
 
               <div className="flex justify-end gap-3 mt-6">
-                <button
-                  onClick={() => dispatch(setSelectedRecipe(null))}
-                  className="btn-secondary"
-                >
+                <button onClick={() => dispatch(setSelectedRecipe(null))} className="btn-secondary">
                   Close
                 </button>
                 {isAdmin && (
@@ -505,7 +542,7 @@ const Recipes: React.FC = () => {
       {/* Create/Edit Recipe Modal */}
       {showModal && (
         <div className="modal-overlay" onClick={handleCloseModal}>
-          <div className="modal-content max-w-4xl" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content max-w-4xl" onClick={e => e.stopPropagation()}>
             <div className="p-6">
               <h3 className="text-xl font-bold mb-4">
                 {editingRecipe ? 'Edit Recipe' : 'Create New Recipe'}
@@ -520,7 +557,7 @@ const Recipes: React.FC = () => {
                     type="text"
                     className="input"
                     value={recipeName}
-                    onChange={(e) => setRecipeName(e.target.value)}
+                    onChange={e => setRecipeName(e.target.value)}
                     required
                     placeholder="e.g., Standard Blend Formula"
                   />
@@ -578,13 +615,13 @@ const Recipes: React.FC = () => {
                             <select
                               className="input"
                               value={step.materialId}
-                              onChange={(e) =>
+                              onChange={e =>
                                 handleUpdateStep(index, 'materialId', parseInt(e.target.value))
                               }
                               required
                             >
                               <option value={0}>Select material...</option>
-                              {ingredients.map((mat) => (
+                              {ingredients.map(mat => (
                                 <option key={mat.id} value={mat.id}>
                                   {mat.name} ({mat.code})
                                 </option>
@@ -597,16 +634,16 @@ const Recipes: React.FC = () => {
                             <select
                               className="input"
                               value={step.equipmentId || ''}
-                              onChange={(e) =>
+                              onChange={e =>
                                 handleUpdateStep(
                                   index,
                                   'equipmentId',
-                                  e.target.value ? parseInt(e.target.value) : undefined
+                                  e.target.value ? parseInt(e.target.value) : undefined,
                                 )
                               }
                             >
                               <option value="">None</option>
-                              {equipment.map((eq) => (
+                              {equipment.map(eq => (
                                 <option key={eq.id} value={eq.id}>
                                   {eq.name} ({eq.code})
                                 </option>
@@ -615,13 +652,15 @@ const Recipes: React.FC = () => {
                           </div>
 
                           <div>
-                            <label className="block text-sm text-gray-600 mb-1">Setpoint (g) *</label>
+                            <label className="block text-sm text-gray-600 mb-1">
+                              Setpoint (g) *
+                            </label>
                             <input
                               type="number"
                               step="0.01"
                               className="input"
                               value={step.setpoint}
-                              onChange={(e) =>
+                              onChange={e =>
                                 handleUpdateStep(index, 'setpoint', parseFloat(e.target.value))
                               }
                               required
@@ -630,14 +669,20 @@ const Recipes: React.FC = () => {
                           </div>
 
                           <div>
-                            <label className="block text-sm text-gray-600 mb-1">Tolerance (%)*</label>
+                            <label className="block text-sm text-gray-600 mb-1">
+                              Tolerance (%)*
+                            </label>
                             <input
                               type="number"
                               step="0.1"
                               className="input"
                               value={step.tolerancePercent}
-                              onChange={(e) =>
-                                handleUpdateStep(index, 'tolerancePercent', parseFloat(e.target.value))
+                              onChange={e =>
+                                handleUpdateStep(
+                                  index,
+                                  'tolerancePercent',
+                                  parseFloat(e.target.value),
+                                )
                               }
                               required
                               min="0"

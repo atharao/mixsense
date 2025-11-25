@@ -44,7 +44,13 @@ const QRGenerator: React.FC = () => {
   const handleGenerateSingle = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!singleForm.materialCode || !singleForm.materialName || !singleForm.setpoint || !singleForm.actualValue || !singleForm.equipment) {
+    if (
+      !singleForm.materialCode ||
+      !singleForm.materialName ||
+      !singleForm.setpoint ||
+      !singleForm.actualValue ||
+      !singleForm.equipment
+    ) {
       alert('Please fill in all fields');
       return;
     }
@@ -93,7 +99,7 @@ const QRGenerator: React.FC = () => {
   };
 
   const handleMaterialSelect = (materialId: number) => {
-    const material = materials.find((m) => m.id === materialId);
+    const material = materials.find(m => m.id === materialId);
     if (material) {
       setSingleForm({
         ...singleForm,
@@ -146,15 +152,17 @@ const QRGenerator: React.FC = () => {
                 <label className="block text-sm text-gray-600 mb-1">Quick Select Material</label>
                 <select
                   className="input"
-                  onChange={(e) => handleMaterialSelect(parseInt(e.target.value))}
+                  onChange={e => handleMaterialSelect(parseInt(e.target.value))}
                   defaultValue=""
                 >
                   <option value="">Select a material...</option>
-                  {materials.filter((m) => m.type === 'INGREDIENT').map((material) => (
-                    <option key={material.id} value={material.id}>
-                      {material.name} ({material.code})
-                    </option>
-                  ))}
+                  {materials
+                    .filter(m => m.type === 'INGREDIENT')
+                    .map(material => (
+                      <option key={material.id} value={material.id}>
+                        {material.name} ({material.code})
+                      </option>
+                    ))}
                 </select>
               </div>
 
@@ -168,7 +176,7 @@ const QRGenerator: React.FC = () => {
                       type="text"
                       className="input"
                       value={singleForm.materialCode}
-                      onChange={(e) => setSingleForm({ ...singleForm, materialCode: e.target.value })}
+                      onChange={e => setSingleForm({ ...singleForm, materialCode: e.target.value })}
                       required
                       placeholder="e.g., MAT-001"
                     />
@@ -180,7 +188,7 @@ const QRGenerator: React.FC = () => {
                       type="text"
                       className="input"
                       value={singleForm.materialName}
-                      onChange={(e) => setSingleForm({ ...singleForm, materialName: e.target.value })}
+                      onChange={e => setSingleForm({ ...singleForm, materialName: e.target.value })}
                       required
                       placeholder="e.g., Flour"
                     />
@@ -193,7 +201,7 @@ const QRGenerator: React.FC = () => {
                       step="0.01"
                       className="input"
                       value={singleForm.setpoint}
-                      onChange={(e) => setSingleForm({ ...singleForm, setpoint: e.target.value })}
+                      onChange={e => setSingleForm({ ...singleForm, setpoint: e.target.value })}
                       required
                       min="0"
                     />
@@ -206,7 +214,7 @@ const QRGenerator: React.FC = () => {
                       step="0.01"
                       className="input"
                       value={singleForm.actualValue}
-                      onChange={(e) => setSingleForm({ ...singleForm, actualValue: e.target.value })}
+                      onChange={e => setSingleForm({ ...singleForm, actualValue: e.target.value })}
                       required
                       min="0"
                     />
@@ -217,15 +225,17 @@ const QRGenerator: React.FC = () => {
                     <select
                       className="input"
                       value={singleForm.equipment}
-                      onChange={(e) => setSingleForm({ ...singleForm, equipment: e.target.value })}
+                      onChange={e => setSingleForm({ ...singleForm, equipment: e.target.value })}
                       required
                     >
                       <option value="">Select equipment...</option>
-                      {materials.filter((m) => m.type === 'EQUIPMENT').map((eq) => (
-                        <option key={eq.id} value={eq.name}>
-                          {eq.name} ({eq.code})
-                        </option>
-                      ))}
+                      {materials
+                        .filter(m => m.type === 'EQUIPMENT')
+                        .map(eq => (
+                          <option key={eq.id} value={eq.name}>
+                            {eq.name} ({eq.code})
+                          </option>
+                        ))}
                       <option value="Any">Any Equipment</option>
                     </select>
                   </div>
@@ -259,7 +269,7 @@ const QRGenerator: React.FC = () => {
                     onClick={() =>
                       handleDownloadQR(
                         generatedQR.image,
-                        `qr-${singleForm.materialCode}-${Date.now()}.png`
+                        `qr-${singleForm.materialCode}-${Date.now()}.png`,
                       )
                     }
                     className="btn-primary flex-1"
@@ -293,10 +303,10 @@ const QRGenerator: React.FC = () => {
                 <select
                   className="input"
                   value={selectedRecipeId}
-                  onChange={(e) => setSelectedRecipeId(parseInt(e.target.value))}
+                  onChange={e => setSelectedRecipeId(parseInt(e.target.value))}
                 >
                   <option value={0}>Choose a recipe...</option>
-                  {recipes.map((recipe) => (
+                  {recipes.map(recipe => (
                     <option key={recipe.id} value={recipe.id}>
                       {recipe.name} ({recipe.steps?.length || 0} steps)
                     </option>
@@ -341,7 +351,10 @@ const QRGenerator: React.FC = () => {
 
                     <button
                       onClick={() =>
-                        handleDownloadQR(qr.qrCodeImage, `qr-step${qr.stepOrder}-${qr.materialCode}.png`)
+                        handleDownloadQR(
+                          qr.qrCodeImage,
+                          `qr-step${qr.stepOrder}-${qr.materialCode}.png`,
+                        )
                       }
                       className="btn-secondary w-full mt-4 text-sm"
                     >
@@ -373,11 +386,14 @@ const QRGenerator: React.FC = () => {
                   }
                 `}</style>
                 <h2 className="text-2xl font-bold mb-6">
-                  QR Codes - {recipes.find((r) => r.id === selectedRecipeId)?.name}
+                  QR Codes - {recipes.find(r => r.id === selectedRecipeId)?.name}
                 </h2>
                 <div className="grid grid-cols-3 gap-8">
                   {bulkQRCodes.map((qr, index) => (
-                    <div key={index} className="border border-gray-300 rounded p-4 page-break-inside-avoid">
+                    <div
+                      key={index}
+                      className="border border-gray-300 rounded p-4 page-break-inside-avoid"
+                    >
                       <div className="text-center mb-3">
                         <span className="inline-block bg-black text-white text-sm font-bold px-3 py-1 rounded">
                           Step {qr.stepOrder}

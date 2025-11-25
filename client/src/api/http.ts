@@ -14,16 +14,16 @@ const http: AxiosInstance = axios.create({
 
 // Request interceptor - Add auth token to requests
 http.interceptors.request.use(
-  (config) => {
+  config => {
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => {
+  error => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // Response interceptor - Handle errors globally
@@ -73,18 +73,21 @@ http.interceptors.response.use(
         message: error.message || 'An unexpected error occurred',
       });
     }
-  }
+  },
 );
 
 // Helper functions for common HTTP methods
-export const get = <T = any>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<ApiResponse<T>>> => {
+export const get = <T = any>(
+  url: string,
+  config?: AxiosRequestConfig,
+): Promise<AxiosResponse<ApiResponse<T>>> => {
   return http.get(url, config);
 };
 
 export const post = <T = any>(
   url: string,
   data?: any,
-  config?: AxiosRequestConfig
+  config?: AxiosRequestConfig,
 ): Promise<AxiosResponse<ApiResponse<T>>> => {
   return http.post(url, data, config);
 };
@@ -92,19 +95,22 @@ export const post = <T = any>(
 export const put = <T = any>(
   url: string,
   data?: any,
-  config?: AxiosRequestConfig
+  config?: AxiosRequestConfig,
 ): Promise<AxiosResponse<ApiResponse<T>>> => {
   return http.put(url, data, config);
 };
 
-export const del = <T = any>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<ApiResponse<T>>> => {
+export const del = <T = any>(
+  url: string,
+  config?: AxiosRequestConfig,
+): Promise<AxiosResponse<ApiResponse<T>>> => {
   return http.delete(url, config);
 };
 
 export const patch = <T = any>(
   url: string,
   data?: any,
-  config?: AxiosRequestConfig
+  config?: AxiosRequestConfig,
 ): Promise<AxiosResponse<ApiResponse<T>>> => {
   return http.patch(url, data, config);
 };
