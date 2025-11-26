@@ -46,7 +46,6 @@ export interface RecipeStep {
   stepOrder: number;
   setpoint: number;
   tolerancePercent: number;
-  qrCode?: string | null;
   material?: Material;
   equipment?: Material;
 }

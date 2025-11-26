@@ -1,8 +1,5 @@
 import { RecipeStep, Material } from '@prisma/client';
 import { prisma } from '../../config/db';
-import { QRService } from '../qr/qr.service';
-
-const qrService = new QRService();
 
 // Helper function to transform recipe data and convert Decimal to number
 function transformRecipe(recipe: any) {
@@ -85,13 +82,14 @@ export class RecipesService {
   }) {
     // Validate that all materials exist
     const materialIds = data.steps.map(s => s.materialId);
+    const uniqueMaterialIds = [...new Set(materialIds)];
     const materials = await prisma.material.findMany({
       where: {
-        id: { in: materialIds },
+        id: { in: uniqueMaterialIds },
       },
     });
 
-    if (materials.length !== materialIds.length) {
+    if (materials.length !== uniqueMaterialIds.length) {
       throw new Error('One or more materials not found');
     }
 
@@ -101,14 +99,15 @@ export class RecipesService {
       .filter((id): id is number => id !== undefined);
 
     if (equipmentIds.length > 0) {
+      const uniqueEquipmentIds = [...new Set(equipmentIds)];
       const equipment = await prisma.material.findMany({
         where: {
-          id: { in: equipmentIds },
+          id: { in: uniqueEquipmentIds },
           type: 'EQUIPMENT',
         },
       });
 
-      if (equipment.length !== equipmentIds.length) {
+      if (equipment.length !== uniqueEquipmentIds.length) {
         throw new Error('One or more equipment not found or not of type EQUIPMENT');
       }
     }
@@ -141,26 +140,7 @@ export class RecipesService {
       },
     });
 
-    // Generate QR codes for each step
-    await this.generateQRCodesForSteps(recipe.steps);
-
-    // Fetch updated recipe with QR codes
-    const updatedRecipe = await prisma.recipe.findUnique({
-      where: { id: recipe.id },
-      include: {
-        steps: {
-          include: {
-            material: true,
-            equipment: true,
-          },
-          orderBy: {
-            stepOrder: 'asc',
-          },
-        },
-      },
-    });
-
-    return transformRecipe(updatedRecipe!);
+    return transformRecipe(recipe);
   }
 
   /**
@@ -193,13 +173,14 @@ export class RecipesService {
     // If steps are being updated, validate materials
     if (data.steps) {
       const materialIds = data.steps.map(s => s.materialId);
+      const uniqueMaterialIds = [...new Set(materialIds)];
       const materials = await prisma.material.findMany({
         where: {
-          id: { in: materialIds },
+          id: { in: uniqueMaterialIds },
         },
       });
 
-      if (materials.length !== materialIds.length) {
+      if (materials.length !== uniqueMaterialIds.length) {
         throw new Error('One or more materials not found');
       }
 
@@ -209,14 +190,15 @@ export class RecipesService {
         .filter((id): id is number => id !== undefined);
 
       if (equipmentIds.length > 0) {
+        const uniqueEquipmentIds = [...new Set(equipmentIds)];
         const equipment = await prisma.material.findMany({
           where: {
-            id: { in: equipmentIds },
+            id: { in: uniqueEquipmentIds },
             type: 'EQUIPMENT',
           },
         });
 
-        if (equipment.length !== equipmentIds.length) {
+        if (equipment.length !== uniqueEquipmentIds.length) {
           throw new Error('One or more equipment not found or not of type EQUIPMENT');
         }
       }
@@ -269,29 +251,6 @@ export class RecipesService {
       });
     });
 
-    // If steps were updated, regenerate QR codes
-    if (data.steps && recipe!.steps) {
-      await this.generateQRCodesForSteps(recipe!.steps);
-
-      // Fetch again to get updated QR codes
-      const updatedRecipe = await prisma.recipe.findUnique({
-        where: { id },
-        include: {
-          steps: {
-            include: {
-              material: true,
-              equipment: true,
-            },
-            orderBy: {
-              stepOrder: 'asc',
-            },
-          },
-        },
-      });
-
-      return transformRecipe(updatedRecipe!);
-    }
-
     return transformRecipe(recipe!);
   }
 
@@ -323,29 +282,5 @@ export class RecipesService {
     });
 
     return { success: true };
-  }
-
-  /**
-   * Generate QR codes for recipe steps
-   */
-  private async generateQRCodesForSteps(steps: any[]): Promise<void> {
-    await Promise.all(
-      steps.map(async step => {
-        // Generate QR code for this step
-        const { qrCodeImage } = await qrService.generateQRCode({
-          materialCode: step.material.code,
-          materialName: step.material.name,
-          setpoint: Number(step.setpoint),
-          actualValue: Number(step.setpoint), // Use setpoint as default for recipe QR codes
-          equipment: step.equipment?.name || 'Any',
-        });
-
-        // Update step with QR code
-        await prisma.recipeStep.update({
-          where: { id: step.id },
-          data: { qrCode: qrCodeImage },
-        });
-      }),
-    );
   }
 }
