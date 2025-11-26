@@ -15,5 +15,8 @@
     "server/**/*.ts": [
       "npm run lint --prefix server"
     ]
+  },
+  "dependencies": {
+    "mqtt": "^5.14.1"
   }
 }

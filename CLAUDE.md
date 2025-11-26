@@ -132,6 +132,16 @@ LOG_LEVEL=info
 ### Client Environment Variables (client/.env)
 ```bash
 VITE_API_URL=http://localhost:5000/api
+
+# MQTT Configuration (optional - uses defaults if not set)
+# IMPORTANT: Use WebSocket port (9001) not TCP port (1883)
+VITE_MQTT_HOST=localhost
+VITE_MQTT_PORT=9001
+VITE_MQTT_TOPIC=mixsense/weight
+VITE_MQTT_PROTOCOL=ws
+
+# ZPL Printer Service (optional)
+VITE_ZPL_PRINTER_URL=http://localhost:9100/
 ```
 
 **Copy from examples:**
@@ -142,18 +152,42 @@ cp client/.env.example client/.env
 
 ## Key Features & Implementation Details
 
-### 1. Batch Execution Flow
-The most complex feature - operators execute recipe steps with real-time weight monitoring:
+### 1. Batch Execution Flow (Process Batch)
+Operators execute recipe steps with MQTT-based real-time weight monitoring and ZPL label printing:
 
-1. **Start Batch**: POST `/api/batches/start` creates batch with IN_PROGRESS status
-2. **Load Cell Integration**: Web Serial API streams weight data to Redux store
-3. **Step Execution**:
-   - Place material on scale
-   - Scan QR code (validates material code against current step)
-   - Monitor weight until stable
-   - Check tolerance: `actualWeight` within `setpoint ± tolerancePercent`
-   - Log entry via POST `/api/batches/:id/log-step`
-4. **Complete Batch**: PUT `/api/batches/:id/end` sets status to COMPLETED
+1. **Select Recipe**: User selects recipe from dropdown
+2. **Start Process Batch**: POST `/api/batches/process/start` creates batch with IN_PROGRESS status
+3. **Display All Steps**: All recipe steps are displayed at once, with current step highlighted
+4. **MQTT Weight Monitoring**: Real-time weight data from MQTT broker (localhost:1883, topic: mixsense/weight)
+5. **Step Execution**:
+   - System auto-displays: material code, material name, setpoint, tolerance
+   - Weight updates in real-time from MQTT
+   - Operator monitors weight until satisfied
+   - Click **NEXT** button when ready
+6. **On NEXT Click**:
+   - Generate QR code with format: `Saumya|stepNumber|materialCode|materialName|weight`
+   - Display QR code on screen temporarily
+   - Call ZPL Printer API (POST http://localhost:9100/) to print label with:
+     - Material Name
+     - Final Weight
+     - QR Code
+   - After successful print: Log step via POST `/api/batches/process/:id/log-step`
+   - Move to next step (highlight next, clear QR)
+7. **After All Steps**: Navigate to Batch Summary screen
+8. **Complete Batch**: User confirms completion, status set to PROCESSED
+
+**ZPL Label Format:**
+```zpl
+^XA
+^MMT
+^PW886
+^LL591
+^FT50,50^A0N,40,40^FDMaterial name: {materialName}^FS
+^FT50,120^A0N,35,35^FDWeight: {weight} KG^FS
+^FT50,200^BQN,2,8
+^FDQA,{qrData}^FS
+^XZ
+```
 
 **Tolerance Calculation:**
 ```typescript
@@ -162,22 +196,55 @@ isWithinTolerance = actualWeight >= (setpoint - toleranceRange)
                  && actualWeight <= (setpoint + toleranceRange)
 ```
 
+**Key Differences from Old Flow:**
+- No more Web Serial API load cell integration
+- No more QR scanner validation
+- MQTT provides weight data instead
+- ZPL API prints labels instead of generating/saving QR codes in DB
+- All steps visible at once (not step-by-step navigation)
+- Summary screen shown after completion
+
 ### 2. Hardware Integration
 
-**Load Cell (Web Serial API):**
-- Located in `client/src/hooks/useLoadCell.ts`
-- Connects via `navigator.serial.requestPort()`
-- Typical baud rate: 9600
-- Parses incoming serial data to extract weight
-- Updates Redux store with `dispatch(updateWeight())`
-- Chrome flag required: `chrome://flags/#enable-experimental-web-platform-features`
+**MQTT Weight Monitor:**
+- Located in `client/src/hooks/useMQTT.ts`
+- **Uses WebSocket protocol** (ws://localhost:9001) for browser compatibility
+- Connects to MQTT broker via WebSocket (NOT direct TCP)
+- Subscribes to weight topic (default: mixsense/weight)
+- Supports message formats:
+  - Simple numeric: "1234.56"
+  - JSON: `{"weight": 1234.56, "stable": true}`
+  - With units: "1234.56 kg"
+- Updates Redux store with `dispatch(updateLoadCellData())`
+- Auto-connects on component mount
+- Implements stability checking algorithm
 
-**QR Scanner (HID Keyboard Mode):**
-- Located in `client/src/hooks/useQrScanner.ts`
-- Listens to global keyboard events
-- Accumulates characters until Enter key
-- Validates scanned QR format: `MaterialCode,Setpoint,ActualValue,MaterialName,Equipment`
-- Timeout pattern distinguishes fast scanner input from manual typing
+**Mosquitto Configuration for WebSockets:**
+Add to your `mosquitto.conf`:
+```conf
+listener 1883
+protocol mqtt
+
+listener 9001
+protocol websockets
+```
+Then restart Mosquitto: `mosquitto -c mosquitto.conf`
+
+**ZPL Printer Integration:**
+- Located in `client/src/services/zplPrinter.ts`
+- Prints labels via HTTP API (POST http://localhost:9100/)
+- Printer: ZDesigner ZD421-300dpi ZPL
+- Generates ZPL code with:
+  - Material name
+  - Final weight (in KG)
+  - QR code with data format: `Saumya|step|material|weight`
+- Label dimensions: 886x591 dots
+- QR codes generated client-side using `qrcode` library
+- No QR codes saved to database (temporary generation only)
+
+**Legacy Hardware (No Longer Used in Process Batch):**
+- Load Cell via Web Serial API (still available in `useLoadCell.ts` for other features)
+- QR Scanner HID mode (still available in `useQrScanner.ts` for other features)
 
 ### 3. Authentication & Authorization
 
