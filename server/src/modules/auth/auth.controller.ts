@@ -79,6 +79,15 @@ export const createUser = async (
       return;
     }
 
+    // Prevent creation of new ADMIN users
+    if (role === 'ADMIN') {
+      res.status(403).json({
+        success: false,
+        message: 'Creating ADMIN users is not allowed. Only OPERATOR users can be created.',
+      });
+      return;
+    }
+
     const user = await authService.createUser(username, password, role);
 
     res.status(201).json({
@@ -204,12 +213,21 @@ export const deleteUser = async (
       message: 'User deleted successfully',
     });
   } catch (error) {
-    if (error instanceof Error && error.message === 'User not found') {
-      res.status(404).json({
-        success: false,
-        message: error.message,
-      });
-      return;
+    if (error instanceof Error) {
+      if (error.message === 'User not found') {
+        res.status(404).json({
+          success: false,
+          message: error.message,
+        });
+        return;
+      }
+      if (error.message.includes('Admin users cannot be deleted')) {
+        res.status(403).json({
+          success: false,
+          message: error.message,
+        });
+        return;
+      }
     }
     next(error);
   }
@@ -232,10 +250,11 @@ export const updateUser = async (
       return;
     }
 
-    if (role && !['ADMIN', 'OPERATOR'].includes(role)) {
-      res.status(400).json({
+    // Prevent role changes for security reasons
+    if (role !== undefined) {
+      res.status(403).json({
         success: false,
-        message: 'Role must be either ADMIN or OPERATOR',
+        message: 'User roles cannot be changed after creation for security reasons.',
       });
       return;
     }
@@ -248,7 +267,8 @@ export const updateUser = async (
       return;
     }
 
-    const user = await authService.updateUser(userId, { username, role, password });
+    // Only allow username and password updates (no role changes)
+    const user = await authService.updateUser(userId, { username, password });
 
     res.status(200).json({
       success: true,

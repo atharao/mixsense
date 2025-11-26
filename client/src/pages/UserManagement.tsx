@@ -78,20 +78,20 @@ const UserManagement: React.FC = () => {
 
     try {
       if (editingUser) {
-        // Update user
+        // Update user (role cannot be changed)
         const updateData: UpdateUserRequest = {
           username: username !== editingUser.username ? username : undefined,
-          role: role !== editingUser.role ? role : undefined,
           password: password ? password : undefined,
+          // Role is intentionally excluded - roles cannot be changed after creation
         };
 
         await authApi.updateUser(editingUser.id, updateData);
       } else {
-        // Create user
+        // Create user (only OPERATOR role allowed)
         const createData: CreateUserRequest = {
           username,
           password,
-          role,
+          role: 'OPERATOR', // Force OPERATOR role
         };
 
         await authApi.createUser(createData);
@@ -107,6 +107,11 @@ const UserManagement: React.FC = () => {
   const handleDelete = async (user: User) => {
     if (currentUser?.id === user.id) {
       alert('You cannot delete your own account');
+      return;
+    }
+
+    if (user.role === 'ADMIN') {
+      alert('Admin users cannot be deleted for security reasons');
       return;
     }
 
@@ -214,8 +219,15 @@ const UserManagement: React.FC = () => {
                         </button>
                         <button
                           onClick={() => handleDelete(user)}
-                          disabled={currentUser?.id === user.id}
+                          disabled={currentUser?.id === user.id || user.role === 'ADMIN'}
                           className="px-3 py-1 text-sm bg-danger-100 text-danger-700 rounded hover:bg-danger-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                          title={
+                            user.role === 'ADMIN'
+                              ? 'Admin users cannot be deleted'
+                              : currentUser?.id === user.id
+                                ? 'You cannot delete your own account'
+                                : 'Delete user'
+                          }
                         >
                           Delete
                         </button>
@@ -253,15 +265,37 @@ const UserManagement: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Role *</label>
-                  <select
-                    className="input"
-                    value={role}
-                    onChange={e => setRole(e.target.value as 'ADMIN' | 'OPERATOR')}
-                    required
-                  >
-                    <option value="OPERATOR">Operator</option>
-                    <option value="ADMIN">Admin</option>
-                  </select>
+                  {editingUser ? (
+                    <div>
+                      <div className="input bg-gray-50 cursor-not-allowed">
+                        <span
+                          className={`badge ${
+                            role === 'ADMIN' ? 'badge-primary' : 'badge-secondary'
+                          }`}
+                        >
+                          {role}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        User roles cannot be changed after creation for security reasons.
+                      </p>
+                    </div>
+                  ) : (
+                    <div>
+                      <select
+                        className="input"
+                        value={role}
+                        onChange={e => setRole(e.target.value as 'ADMIN' | 'OPERATOR')}
+                        required
+                        disabled
+                      >
+                        <option value="OPERATOR">Operator</option>
+                      </select>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Only operators can be created. Admin accounts are system-managed.
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div>

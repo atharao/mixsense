@@ -158,6 +158,11 @@ export class AuthService {
       throw new Error('User not found');
     }
 
+    // Prevent deletion of ADMIN users
+    if (user.role === 'ADMIN') {
+      throw new Error('Admin users cannot be deleted for security reasons');
+    }
+
     // Delete user
     await prisma.user.delete({
       where: { id: userId },
