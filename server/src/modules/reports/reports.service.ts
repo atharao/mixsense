@@ -1,9 +1,7 @@
-import { PrismaClient } from '@prisma/client';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import ExcelJS from 'exceljs';
-
-const prisma = new PrismaClient();
+import { prisma } from '../../config/db';
 
 // Helper function to calculate if a log is within tolerance
 function isWithinTolerance(log: {

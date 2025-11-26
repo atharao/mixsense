@@ -1,6 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../../config/db';
 
 export class DashboardService {
   /**
@@ -311,13 +309,11 @@ export class DashboardService {
   }
 
   /**
-   * Get recent alerts (batches with tolerance issues)
+   * Get recent alerts (recent batch logs for monitoring)
    */
   async getRecentAlerts(limit: number = 10) {
+    // Note: We fetch all recent logs; filtering for tolerance issues happens on frontend
     const logsWithIssues = await prisma.batchLog.findMany({
-      where: {
-        // Note: withinTolerance calculated on-the-fly
-      },
       take: limit,
       orderBy: {
         timestamp: 'desc',

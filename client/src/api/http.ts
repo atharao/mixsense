@@ -1,5 +1,7 @@
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { ApiResponse } from '../types/api';
+import store from '../store';
+import { logout } from '../store/authSlice';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -36,11 +38,15 @@ http.interceptors.response.use(
     if (error.response) {
       const { status, data } = error.response;
 
-      // Unauthorized - Clear token and redirect to login
+      // Unauthorized - Clear token and redirect to login (only if authenticated)
       if (status === 401) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        window.location.href = '/login';
+        const hasToken = localStorage.getItem('token');
+        if (hasToken) {
+          // User was authenticated but token expired/invalid
+          // Dispatch logout action - ProtectedRoute will handle navigation via React Router
+          store.dispatch(logout());
+        }
+        // If no token, it's a failed login attempt - let the login page handle the error
       }
 
       // Forbidden

@@ -1,7 +1,7 @@
-import { PrismaClient, RecipeStep, Material } from '@prisma/client';
+import { RecipeStep, Material } from '@prisma/client';
+import { prisma } from '../../config/db';
 import { QRService } from '../qr/qr.service';
 
-const prisma = new PrismaClient();
 const qrService = new QRService();
 
 // Helper function to transform recipe data and convert Decimal to number

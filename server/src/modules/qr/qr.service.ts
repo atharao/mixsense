@@ -1,8 +1,6 @@
-import { PrismaClient } from '@prisma/client';
 import QRCode from 'qrcode';
 import crypto from 'crypto';
-
-const prisma = new PrismaClient();
+import { prisma } from '../../config/db';
 
 interface QRCodeData {
   materialCode: string;

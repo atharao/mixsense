@@ -1,6 +1,5 @@
-import { PrismaClient, BatchStatus, RecipeStep, Material } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { BatchStatus, RecipeStep, Material } from '@prisma/client';
+import { prisma } from '../../config/db';
 
 // Helper function to transform recipe steps and convert Decimal to number
 function transformRecipeSteps(
