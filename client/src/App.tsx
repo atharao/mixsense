@@ -12,6 +12,7 @@ import BatchSummary from './pages/BatchSummary';
 import Reports from './pages/Reports';
 import QRGenerator from './pages/QRGenerator';
 import UserManagement from './pages/UserManagement';
+import TestWebSocket from './pages/TestWebSocket';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -45,6 +46,7 @@ function App() {
       <Routes>
         {/* Public routes */}
         <Route path="/login" element={<Login />} />
+        <Route path="/test-websocket" element={<TestWebSocket />} />
 
         {/* Protected routes */}
         <Route

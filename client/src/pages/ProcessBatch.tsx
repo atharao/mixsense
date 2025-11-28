@@ -5,7 +5,7 @@ import QRCode from 'qrcode';
 import { RootState } from '../store';
 import { recipesApi } from '../api/recipes.api';
 import { batchesApi } from '../api/batches.api';
-import { useMQTT } from '../hooks/useMQTT';
+import { useWebSocket } from '../hooks/useWebSocket';
 import { setRecipes } from '../store/recipesSlice';
 import { printLabel, formatQRData } from '../services/zplPrinter';
 import { Recipe } from '../types/models';
@@ -36,19 +36,13 @@ const ProcessBatch: React.FC = () => {
     currentQRCode: null,
   });
 
-  const { isConnected, error: mqttError, currentWeight, isStable, connect, disconnect } = useMQTT();
+  const { isConnected, error: wsError, currentWeight, isStable } = useWebSocket();
 
   const qrCanvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     loadRecipes();
     checkForActiveBatch();
-    // Auto-connect to MQTT on mount
-    connect();
-
-    return () => {
-      disconnect();
-    };
   }, []);
 
   const checkForActiveBatch = async () => {
@@ -100,7 +94,7 @@ const ProcessBatch: React.FC = () => {
     }
 
     if (!isConnected) {
-      alert('MQTT connection not established. Please wait...');
+      alert('WebSocket connection not established. Please wait...');
       return;
     }
 
@@ -149,7 +143,7 @@ const ProcessBatch: React.FC = () => {
     if (!currentStep) return;
 
     if (currentWeight === null) {
-      alert('No weight data available from MQTT');
+      alert('No weight data available from WebSocket');
       return;
     }
 
@@ -286,9 +280,9 @@ const ProcessBatch: React.FC = () => {
     <div className="max-w-6xl mx-auto p-6">
       <h1 className="text-3xl font-bold mb-6">Process Batch</h1>
 
-      {/* MQTT Connection Status */}
+      {/* WebSocket Connection Status */}
       <div className="mb-6 bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-semibold mb-4">MQTT Weight Monitor</h2>
+        <h2 className="text-xl font-semibold mb-4">Node-RED Weight Monitor</h2>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <span className="font-semibold">Status:</span>
@@ -315,7 +309,7 @@ const ProcessBatch: React.FC = () => {
             </div>
           )}
 
-          {mqttError && <div className="text-red-600">Error: {mqttError}</div>}
+          {wsError && <div className="text-red-600">Error: {wsError}</div>}
         </div>
       </div>
 

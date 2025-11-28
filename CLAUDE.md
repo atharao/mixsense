@@ -133,12 +133,8 @@ LOG_LEVEL=info
 ```bash
 VITE_API_URL=http://localhost:5000/api
 
-# MQTT Configuration (optional - uses defaults if not set)
-# IMPORTANT: Use WebSocket port (9001) not TCP port (1883)
-VITE_MQTT_HOST=localhost
-VITE_MQTT_PORT=9001
-VITE_MQTT_TOPIC=mixsense/weight
-VITE_MQTT_PROTOCOL=ws
+# Node-RED WebSocket Configuration
+VITE_WEIGHT_WS_URL=ws://localhost:1880/ws/weight
 
 # ZPL Printer Service (optional)
 VITE_ZPL_PRINTER_URL=http://localhost:9100/
@@ -153,15 +149,15 @@ cp client/.env.example client/.env
 ## Key Features & Implementation Details
 
 ### 1. Batch Execution Flow (Process Batch)
-Operators execute recipe steps with MQTT-based real-time weight monitoring and ZPL label printing:
+Operators execute recipe steps with real-time weight monitoring via Node-RED WebSocket and ZPL label printing:
 
 1. **Select Recipe**: User selects recipe from dropdown
 2. **Start Process Batch**: POST `/api/batches/process/start` creates batch with IN_PROGRESS status
 3. **Display All Steps**: All recipe steps are displayed at once, with current step highlighted
-4. **MQTT Weight Monitoring**: Real-time weight data from MQTT broker (localhost:1883, topic: mixsense/weight)
+4. **Weight Monitoring**: Real-time weight data from Node-RED via WebSocket (ws://localhost:1880/ws/weight)
 5. **Step Execution**:
    - System auto-displays: material code, material name, setpoint, tolerance
-   - Weight updates in real-time from MQTT
+   - Weight updates in real-time from Node-RED WebSocket
    - Operator monitors weight until satisfied
    - Click **NEXT** button when ready
 6. **On NEXT Click**:
@@ -199,18 +195,17 @@ isWithinTolerance = actualWeight >= (setpoint - toleranceRange)
 **Key Differences from Old Flow:**
 - No more Web Serial API load cell integration
 - No more QR scanner validation
-- MQTT provides weight data instead
+- Node-RED WebSocket provides weight data instead
 - ZPL API prints labels instead of generating/saving QR codes in DB
 - All steps visible at once (not step-by-step navigation)
 - Summary screen shown after completion
 
 ### 2. Hardware Integration
 
-**MQTT Weight Monitor:**
-- Located in `client/src/hooks/useMQTT.ts`
-- **Uses WebSocket protocol** (ws://localhost:9001) for browser compatibility
-- Connects to MQTT broker via WebSocket (NOT direct TCP)
-- Subscribes to weight topic (default: mixsense/weight)
+**Node-RED WebSocket Weight Monitor:**
+- Located in `client/src/hooks/useWebSocket.ts`
+- **Connects directly to Node-RED WebSocket endpoint** (ws://localhost:1880/ws/weight)
+- Receives real-time weight data every second from Node-RED
 - Supports message formats:
   - Simple numeric: "1234.56"
   - JSON: `{"weight": 1234.56, "stable": true}`
@@ -219,16 +214,10 @@ isWithinTolerance = actualWeight >= (setpoint - toleranceRange)
 - Auto-connects on component mount
 - Implements stability checking algorithm
 
-**Mosquitto Configuration for WebSockets:**
-Add to your `mosquitto.conf`:
-```conf
-listener 1883
-protocol mqtt
-
-listener 9001
-protocol websockets
-```
-Then restart Mosquitto: `mosquitto -c mosquitto.conf`
+**Node-RED Setup:**
+- Configure Node-RED to expose weight data via WebSocket on `/ws/weight`
+- Typical port: 1880 (default Node-RED HTTP/WebSocket port)
+- Data should be published every second for real-time monitoring
 
 **ZPL Printer Integration:**
 - Located in `client/src/services/zplPrinter.ts`
@@ -245,6 +234,7 @@ Then restart Mosquitto: `mosquitto -c mosquitto.conf`
 **Legacy Hardware (No Longer Used in Process Batch):**
 - Load Cell via Web Serial API (still available in `useLoadCell.ts` for other features)
 - QR Scanner HID mode (still available in `useQrScanner.ts` for other features)
+- MQTT broker integration (replaced by direct Node-RED WebSocket connection)
 
 ### 3. Authentication & Authorization
 
