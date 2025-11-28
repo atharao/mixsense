@@ -10,7 +10,6 @@ import recipesRoutes from './modules/recipes/recipes.routes';
 import batchesRoutes from './modules/batches/batches.routes';
 import reportsRoutes from './modules/reports/reports.routes';
 import dashboardRoutes from './modules/dashboard/dashboard.routes';
-import qrRoutes from './modules/qr/qr.routes';
 
 // Import middleware
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
@@ -54,7 +53,6 @@ app.use('/api/recipes', recipesRoutes);
 app.use('/api/batches', batchesRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/qr', qrRoutes);
 
 // 404 handler
 app.use(notFoundHandler);

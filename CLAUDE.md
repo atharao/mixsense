@@ -87,9 +87,7 @@ src/
 │   └── ZplBarcodePopup.tsx        # QR code display popup during printing
 ├── hooks/        # Custom React hooks
 │   ├── useWebSocket.ts            # Weight data from Node-RED (Process Recipe)
-│   ├── useBarcodeScanner.ts       # Barcode scan data (Process Batch)
-│   ├── useLoadCell.ts             # Legacy Web Serial API
-│   └── useQrScanner.ts            # Legacy HID scanner
+│   └── useBarcodeScanner.ts       # Barcode scan data (Process Batch)
 ├── pages/        # Page components
 │   ├── ProcessRecipe.tsx          # Material preparation with weight monitoring
 │   ├── ProcessBatch.tsx           # Batch execution with barcode scanning
@@ -271,10 +269,6 @@ isWithinTolerance = actualWeight >= (setpoint - toleranceRange)
   - `printLabel()`: Generates ZPL code and sends to printer
 - QR codes generated client-side using `qrcode` library
 - Barcode data includes: recipe, step, material, weight, user, timestamp, setpoint, tolerance
-
-**Legacy Hardware (Still Available):**
-- Load Cell via Web Serial API (in `useLoadCell.ts` for other features)
-- QR Scanner HID mode (in `useQrScanner.ts` for other features)
 
 ### 4. Authentication & Authorization
 

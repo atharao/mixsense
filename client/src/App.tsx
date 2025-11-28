@@ -8,7 +8,6 @@ import Materials from './pages/Materials';
 import Recipes from './pages/Recipes';
 import ProcessRecipe from './pages/ProcessRecipe';
 import ProcessBatch from './pages/ProcessBatch';
-import BatchSummary from './pages/BatchSummary';
 import Reports from './pages/Reports';
 import UserManagement from './pages/UserManagement';
 
@@ -87,15 +86,6 @@ function App() {
           element={
             <ProtectedRoute>
               <ProcessBatch />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/batch-summary"
-          element={
-            <ProtectedRoute>
-              <BatchSummary />
             </ProtectedRoute>
           }
         />
