@@ -25,7 +25,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const navLinks = [
     { path: '/dashboard', label: 'Dashboard', icon: '📊', allowedRoles: ['ADMIN', 'OPERATOR'] },
-    { path: '/batch', label: 'Run Batch', icon: '⚗️', allowedRoles: ['ADMIN', 'OPERATOR'] },
+    {
+      path: '/process-recipe',
+      label: 'Process Recipe',
+      icon: '📋',
+      allowedRoles: ['ADMIN', 'OPERATOR'],
+    },
     {
       path: '/process-batch',
       label: 'Process Batch',
@@ -36,7 +41,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { path: '/materials', label: 'Materials', icon: '📦', allowedRoles: ['ADMIN'] },
     { path: '/reports', label: 'Reports', icon: '📈', allowedRoles: ['ADMIN', 'OPERATOR'] },
     { path: '/users', label: 'Users', icon: '👥', allowedRoles: ['ADMIN'] },
-    { path: '/qr-generator', label: 'QR Generator', icon: '📱', allowedRoles: ['ADMIN'] },
   ];
 
   const filteredNavLinks = navLinks.filter(link => link.allowedRoles.includes(user?.role || ''));

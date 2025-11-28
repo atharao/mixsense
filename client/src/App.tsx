@@ -6,13 +6,11 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Materials from './pages/Materials';
 import Recipes from './pages/Recipes';
-import RunBatch from './pages/RunBatch';
+import ProcessRecipe from './pages/ProcessRecipe';
 import ProcessBatch from './pages/ProcessBatch';
 import BatchSummary from './pages/BatchSummary';
 import Reports from './pages/Reports';
-import QRGenerator from './pages/QRGenerator';
 import UserManagement from './pages/UserManagement';
-import TestWebSocket from './pages/TestWebSocket';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -46,7 +44,6 @@ function App() {
       <Routes>
         {/* Public routes */}
         <Route path="/login" element={<Login />} />
-        <Route path="/test-websocket" element={<TestWebSocket />} />
 
         {/* Protected routes */}
         <Route
@@ -77,10 +74,10 @@ function App() {
         />
 
         <Route
-          path="/batch"
+          path="/process-recipe"
           element={
             <ProtectedRoute>
-              <RunBatch />
+              <ProcessRecipe />
             </ProtectedRoute>
           }
         />
@@ -109,15 +106,6 @@ function App() {
             <ProtectedRoute>
               <Reports />
             </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/qr-generator"
-          element={
-            <AdminRoute>
-              <QRGenerator />
-            </AdminRoute>
           }
         />
 

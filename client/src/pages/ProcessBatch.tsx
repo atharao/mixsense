@@ -1,49 +1,56 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import QRCode from 'qrcode';
 import { RootState } from '../store';
 import { recipesApi } from '../api/recipes.api';
 import { batchesApi } from '../api/batches.api';
-import { useWebSocket } from '../hooks/useWebSocket';
+import { useBarcodeScanner, BarcodeData } from '../hooks/useBarcodeScanner';
 import { setRecipes } from '../store/recipesSlice';
-import { printLabel, formatQRData } from '../services/zplPrinter';
 import { Recipe } from '../types/models';
+import StepProgressIndicator from '../components/StepProgressIndicator';
 
 interface ProcessBatchState {
   activeBatch: any | null;
   currentRecipe: Recipe | null;
   currentStepIndex: number;
   completedSteps: number[];
-  currentQRCode: string | null; // Temporary QR code for current step
 }
 
 const ProcessBatch: React.FC = () => {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const { recipes } = useSelector((state: RootState) => state.recipes);
+  const { user } = useSelector((state: RootState) => state.auth);
 
   const [selectedRecipeId, setSelectedRecipeId] = useState<number>(0);
   const [isStarting, setIsStarting] = useState(false);
   const [isProcessingStep, setIsProcessingStep] = useState(false);
-  const [isAborting, setIsAborting] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
 
   const [processBatch, setProcessBatch] = useState<ProcessBatchState>({
     activeBatch: null,
     currentRecipe: null,
     currentStepIndex: 0,
     completedSteps: [],
-    currentQRCode: null,
   });
 
-  const { isConnected, error: wsError, currentWeight, isStable } = useWebSocket();
-
-  const qrCanvasRef = useRef<HTMLCanvasElement>(null);
+  const {
+    isConnected,
+    hasDataReceived,
+    error: wsError,
+    lastScannedBarcode,
+    clearLastBarcode,
+  } = useBarcodeScanner();
 
   useEffect(() => {
     loadRecipes();
     checkForActiveBatch();
   }, []);
+
+  // Handle barcode scan
+  useEffect(() => {
+    if (lastScannedBarcode && processBatch.activeBatch && processBatch.currentRecipe) {
+      handleBarcodeScanned(lastScannedBarcode);
+    }
+  }, [lastScannedBarcode]);
 
   const checkForActiveBatch = async () => {
     try {
@@ -57,18 +64,23 @@ const ProcessBatch: React.FC = () => {
         const recipe = recipeResponse.data.data!;
 
         // Calculate which steps are already completed
-        const completedStepIds = activeBatch.logs?.map(log => log.stepId) || [];
+        const completedStepIndices: number[] = [];
+        activeBatch.logs?.forEach(log => {
+          const stepIndex = recipe.steps?.findIndex(s => s.id === log.stepId);
+          if (stepIndex !== undefined && stepIndex >= 0) {
+            completedStepIndices.push(stepIndex);
+          }
+        });
 
         // Find current step index
         const currentStepIndex =
-          recipe.steps?.findIndex(step => !completedStepIds.includes(step.id)) || 0;
+          recipe.steps?.findIndex((_, index) => !completedStepIndices.includes(index)) || 0;
 
         setProcessBatch({
           activeBatch,
           currentRecipe: recipe,
           currentStepIndex: currentStepIndex >= 0 ? currentStepIndex : 0,
-          completedSteps: completedStepIds,
-          currentQRCode: null,
+          completedSteps: completedStepIndices,
         });
 
         alert('Resuming active batch: ' + recipe.name);
@@ -93,8 +105,8 @@ const ProcessBatch: React.FC = () => {
       return;
     }
 
-    if (!isConnected) {
-      alert('WebSocket connection not established. Please wait...');
+    if (!user) {
+      alert('User not authenticated');
       return;
     }
 
@@ -112,7 +124,6 @@ const ProcessBatch: React.FC = () => {
         currentRecipe: recipe,
         currentStepIndex: 0,
         completedSteps: [],
-        currentQRCode: null,
       });
 
       setIsStarting(false);
@@ -122,113 +133,105 @@ const ProcessBatch: React.FC = () => {
     }
   };
 
-  const generateQRCodeImage = async (qrData: string): Promise<string> => {
-    try {
-      // Generate QR code as data URL
-      const qrCodeDataUrl = await QRCode.toDataURL(qrData, {
-        width: 300,
-        margin: 2,
-      });
-      return qrCodeDataUrl;
-    } catch (error) {
-      console.error('Error generating QR code:', error);
-      throw error;
-    }
-  };
-
-  const handleNextStep = async () => {
-    if (!processBatch.activeBatch || !processBatch.currentRecipe) return;
-
-    const currentStep = processBatch.currentRecipe.steps?.[processBatch.currentStepIndex];
-    if (!currentStep) return;
-
-    if (currentWeight === null) {
-      alert('No weight data available from WebSocket');
+  const handleBarcodeScanned = async (barcodeData: BarcodeData) => {
+    if (isProcessingStep) {
+      console.log('Already processing a step, ignoring barcode');
       return;
     }
 
-    // Check if weight is within tolerance
-    const setpoint = Number(currentStep.setpoint);
-    const tolerance = Number(currentStep.tolerancePercent);
-    const toleranceRange = (setpoint * tolerance) / 100;
-    const lowerBound = setpoint - toleranceRange;
-    const upperBound = setpoint + toleranceRange;
-    const withinTolerance = currentWeight >= lowerBound && currentWeight <= upperBound;
+    if (!processBatch.currentRecipe || !processBatch.activeBatch) {
+      alert('No active batch');
+      clearLastBarcode();
+      return;
+    }
 
-    if (!withinTolerance) {
-      const proceed = confirm(
-        `Warning: Weight ${currentWeight.toFixed(2)} KG is not within tolerance range ${lowerBound.toFixed(2)} - ${upperBound.toFixed(2)} KG. Do you want to proceed anyway?`,
+    const currentStep = processBatch.currentRecipe.steps?.[processBatch.currentStepIndex];
+    if (!currentStep) {
+      alert('No current step found');
+      clearLastBarcode();
+      return;
+    }
+
+    // Validate barcode data matches current step
+    if (barcodeData.recipeId !== processBatch.currentRecipe.id) {
+      alert(
+        `Wrong recipe! Expected "${processBatch.currentRecipe.name}" but scanned "${barcodeData.recipeName}"`,
       );
-      if (!proceed) return;
+      clearLastBarcode();
+      return;
+    }
+
+    if (barcodeData.stepId !== currentStep.id) {
+      alert(
+        `Wrong step! Expected step ${currentStep.stepOrder} (${currentStep.material?.name}) but scanned step ${barcodeData.stepOrder} (${barcodeData.materialName})`,
+      );
+      clearLastBarcode();
+      return;
+    }
+
+    if (barcodeData.materialCode !== currentStep.material?.code) {
+      alert(
+        `Wrong material! Expected "${currentStep.material?.name}" but scanned "${barcodeData.materialName}"`,
+      );
+      clearLastBarcode();
+      return;
     }
 
     try {
       setIsProcessingStep(true);
 
-      // Format QR data: Saumya|step|material|weight
-      const qrData = formatQRData(
-        currentStep.stepOrder,
-        currentStep.material!.code,
-        currentStep.material!.name,
-        currentWeight,
-      );
+      // Create the full QR data string for storage
+      const qrDataString = `${barcodeData.recipeId}|${barcodeData.recipeName}|${barcodeData.stepId}|${barcodeData.stepOrder}|${barcodeData.materialCode}|${barcodeData.materialName}|${barcodeData.actualWeight}|${barcodeData.userId}|${barcodeData.timestamp}|${barcodeData.setpoint}|${barcodeData.tolerance}`;
 
-      // Generate QR code image for display
-      const qrCodeImage = await generateQRCodeImage(qrData);
-      setProcessBatch(prev => ({ ...prev, currentQRCode: qrCodeImage }));
-
-      // Print label via ZPL API
-      await printLabel({
-        materialName: currentStep.material!.name,
-        weight: currentWeight,
-        qrData: qrData,
-      });
-
-      // Log the step to backend after successful print
+      // Log the step to backend
       await batchesApi.logProcessStep(processBatch.activeBatch.id, {
         stepId: currentStep.id,
         materialId: currentStep.materialId,
-        actualWeight: currentWeight,
-        setpointSnapshot: setpoint,
-        toleranceSnapshot: tolerance,
-        generatedQrCode: qrData, // Store QR data string, not image
+        actualWeight: barcodeData.actualWeight,
+        setpointSnapshot: barcodeData.setpoint,
+        toleranceSnapshot: barcodeData.tolerance,
+        scannedQrCode: qrDataString,
+        generatedQrCode: '', // Empty since we're scanning, not generating
       });
 
       // Update state - move to next step
-      const newCompletedSteps = [...processBatch.completedSteps, currentStep.id];
+      const newCompletedSteps = [...processBatch.completedSteps, processBatch.currentStepIndex];
       const nextStepIndex = processBatch.currentStepIndex + 1;
 
       setProcessBatch({
         ...processBatch,
         completedSteps: newCompletedSteps,
         currentStepIndex: nextStepIndex,
-        currentQRCode: null, // Clear QR after moving to next step
       });
 
+      clearLastBarcode();
       setIsProcessingStep(false);
 
       // Check if all steps are completed
       if (nextStepIndex >= (processBatch.currentRecipe.steps?.length || 0)) {
-        // Show summary screen
-        showSummaryScreen();
+        // All steps completed, show completion option
+        const shouldComplete = confirm(
+          'All steps completed! Do you want to mark this batch as PROCESSED?',
+        );
+        if (shouldComplete) {
+          await handleCompleteBatch();
+        }
       }
     } catch (error: any) {
-      alert(error.message || 'Failed to process step');
+      alert(error.response?.data?.message || 'Failed to log step');
       setIsProcessingStep(false);
-      setProcessBatch(prev => ({ ...prev, currentQRCode: null }));
+      clearLastBarcode();
     }
   };
 
-  const handleAbortBatch = async () => {
+  const handleCompleteBatch = async () => {
     if (!processBatch.activeBatch) return;
 
-    if (!confirm('Are you sure you want to abort this batch? All progress will be lost.')) {
-      return;
-    }
-
     try {
-      setIsAborting(true);
-      await batchesApi.end(processBatch.activeBatch.id, { status: 'ABORTED' });
+      setIsCompleting(true);
+      await batchesApi.completeProcess(processBatch.activeBatch.id);
+
+      alert('Batch completed successfully!');
 
       // Reset state
       setProcessBatch({
@@ -236,75 +239,45 @@ const ProcessBatch: React.FC = () => {
         currentRecipe: null,
         currentStepIndex: 0,
         completedSteps: [],
-        currentQRCode: null,
       });
+      setSelectedRecipeId(0);
 
-      setIsAborting(false);
-      alert('Batch aborted successfully');
+      setIsCompleting(false);
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Failed to abort batch');
-      setIsAborting(false);
+      alert(error.response?.data?.message || 'Failed to complete batch');
+      setIsCompleting(false);
     }
-  };
-
-  const showSummaryScreen = () => {
-    // Navigate to summary with batch data
-    const summaryData = {
-      batchId: processBatch.activeBatch.id,
-      recipeName: processBatch.currentRecipe!.name,
-      completedSteps: processBatch.completedSteps.length,
-      totalSteps: processBatch.currentRecipe!.steps?.length || 0,
-    };
-
-    // Store in session storage for summary page
-    sessionStorage.setItem('batchSummary', JSON.stringify(summaryData));
-    navigate('/batch-summary');
   };
 
   const currentStep = processBatch.currentRecipe?.steps?.[processBatch.currentStepIndex];
 
-  // Calculate tolerance values for current step
-  let withinTolerance = false;
-  let lowerBound = 0;
-  let upperBound = 0;
-  if (currentStep && currentWeight !== null) {
-    const setpoint = Number(currentStep.setpoint);
-    const tolerance = Number(currentStep.tolerancePercent);
-    const toleranceRange = (setpoint * tolerance) / 100;
-    lowerBound = setpoint - toleranceRange;
-    upperBound = setpoint + toleranceRange;
-    withinTolerance = currentWeight >= lowerBound && currentWeight <= upperBound;
-  }
-
   return (
     <div className="max-w-6xl mx-auto p-6">
       <h1 className="text-3xl font-bold mb-6">Process Batch</h1>
+      <p className="text-gray-600 mb-6">
+        Scan barcoded packets to log material usage into the system.
+      </p>
 
-      {/* WebSocket Connection Status */}
+      {/* Barcode Scanner Connection Status */}
       <div className="mb-6 bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-semibold mb-4">Node-RED Weight Monitor</h2>
+        <h2 className="text-xl font-semibold mb-4">Barcode Scanner Monitor</h2>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <span className="font-semibold">Status:</span>
             <span
               className={`px-3 py-1 rounded ${
-                isConnected ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                hasDataReceived ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
               }`}
             >
-              {isConnected ? 'Connected' : 'Disconnected'}
+              {hasDataReceived ? 'CONNECTED' : isConnected ? 'Waiting for scan...' : 'Disconnected'}
             </span>
           </div>
 
-          {isConnected && (
+          {lastScannedBarcode && (
             <div className="flex items-center gap-2">
-              <span className="font-semibold">Current Weight:</span>
-              <span
-                className={`px-3 py-1 rounded text-xl font-bold ${
-                  isStable ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'
-                }`}
-              >
-                {currentWeight !== null ? currentWeight.toFixed(2) : '0.00'} KG
-                {isStable && ' (Stable)'}
+              <span className="font-semibold">Last Scanned:</span>
+              <span className="px-3 py-1 rounded bg-blue-100 text-blue-800 text-sm">
+                {lastScannedBarcode.materialName} - {lastScannedBarcode.actualWeight.toFixed(2)} KG
               </span>
             </div>
           )}
@@ -336,7 +309,7 @@ const ProcessBatch: React.FC = () => {
 
           <button
             onClick={handleStartProcessBatch}
-            disabled={isStarting || !selectedRecipeId || !isConnected}
+            disabled={isStarting || !selectedRecipeId}
             className="w-full py-2 bg-green-500 text-white rounded hover:bg-green-600 disabled:bg-gray-300"
           >
             {isStarting ? 'Starting...' : 'Start Process Batch'}
@@ -347,32 +320,22 @@ const ProcessBatch: React.FC = () => {
       {/* Active Process Batch */}
       {processBatch.activeBatch && processBatch.currentRecipe && (
         <div className="space-y-6">
-          {/* Recipe Info & Progress */}
+          {/* Recipe Info */}
           <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-xl font-semibold">{processBatch.currentRecipe.name}</h2>
-              <button
-                onClick={handleAbortBatch}
-                disabled={isAborting}
-                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 disabled:bg-gray-300"
-              >
-                {isAborting ? 'Aborting...' : 'Abort Batch'}
-              </button>
-            </div>
+            <h2 className="text-xl font-semibold mb-2">{processBatch.currentRecipe.name}</h2>
             <p className="text-gray-600">
               Step {processBatch.currentStepIndex + 1} of{' '}
               {processBatch.currentRecipe.steps?.length || 0}
             </p>
-            <div className="mt-2">
-              <div className="w-full bg-gray-200 rounded-full h-3">
-                <div
-                  className="bg-green-500 h-3 rounded-full transition-all"
-                  style={{
-                    width: `${(processBatch.completedSteps.length / (processBatch.currentRecipe.steps?.length || 1)) * 100}%`,
-                  }}
-                />
-              </div>
-            </div>
+          </div>
+
+          {/* Step Progress Indicator */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <StepProgressIndicator
+              totalSteps={processBatch.currentRecipe.steps?.length || 0}
+              currentStepIndex={processBatch.currentStepIndex}
+              completedSteps={processBatch.completedSteps}
+            />
           </div>
 
           {/* All Steps Display */}
@@ -381,7 +344,7 @@ const ProcessBatch: React.FC = () => {
             <div className="space-y-3">
               {processBatch.currentRecipe.steps?.map((step, index) => {
                 const isCurrentStep = index === processBatch.currentStepIndex;
-                const isCompleted = processBatch.completedSteps.includes(step.id);
+                const isCompleted = processBatch.completedSteps.includes(index);
 
                 return (
                   <div
@@ -410,12 +373,12 @@ const ProcessBatch: React.FC = () => {
                           </span>
                           {isCompleted && (
                             <span className="px-2 py-1 bg-green-200 text-green-800 rounded text-xs">
-                              ✓ Completed
+                              ✓ Scanned
                             </span>
                           )}
                           {isCurrentStep && (
                             <span className="px-2 py-1 bg-blue-200 text-blue-800 rounded text-xs">
-                              → Current
+                              → Waiting for scan
                             </span>
                           )}
                         </div>
@@ -453,59 +416,96 @@ const ProcessBatch: React.FC = () => {
                   Current Step: {currentStep.material?.name || 'N/A'}
                 </h3>
 
-                <div className="mb-4">
-                  <div
-                    className={`p-6 rounded-lg text-center ${
-                      withinTolerance
-                        ? 'bg-green-100 border-2 border-green-500'
-                        : 'bg-yellow-100 border-2 border-yellow-500'
-                    }`}
-                  >
-                    <p className="text-sm text-gray-600 mb-1">Actual Weight</p>
-                    <p className="text-4xl font-bold">
-                      {currentWeight !== null ? currentWeight.toFixed(2) : '0.00'} KG
+                <div className="p-6 rounded-lg text-center bg-blue-100 border-2 border-blue-500">
+                  <div className="mb-4">
+                    <svg
+                      className="w-16 h-16 mx-auto text-blue-600 mb-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
+                      />
+                    </svg>
+                    <p className="text-2xl font-bold text-blue-800">
+                      Scan barcode for {currentStep.material?.name}
                     </p>
-                    <p className="text-sm mt-2">
-                      Target: {Number(currentStep.setpoint).toFixed(2)} KG (±
-                      {Number(currentStep.tolerancePercent)}%)
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      Acceptable: {lowerBound.toFixed(2)} - {upperBound.toFixed(2)} KG
-                    </p>
-                    {withinTolerance && (
-                      <p className="text-green-600 font-semibold mt-2">✓ Within Tolerance</p>
-                    )}
-                    {!withinTolerance && currentWeight !== null && (
-                      <p className="text-yellow-600 font-semibold mt-2">
-                        ⚠ Outside Tolerance Range
-                      </p>
-                    )}
                   </div>
+                  <p className="text-sm text-blue-700">
+                    Expected: {currentStep.material?.code} -{' '}
+                    {Number(currentStep.setpoint).toFixed(2)} KG (±
+                    {Number(currentStep.tolerancePercent)}%)
+                  </p>
+                  {isProcessingStep && (
+                    <div className="mt-4 flex items-center justify-center">
+                      <svg
+                        className="animate-spin h-5 w-5 text-blue-600 mr-2"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                      <span className="text-blue-700 font-medium">Processing barcode...</span>
+                    </div>
+                  )}
                 </div>
-
-                {/* QR Code Display (Temporary) */}
-                {processBatch.currentQRCode && (
-                  <div className="mb-4 p-4 bg-gray-50 rounded-lg text-center">
-                    <p className="text-sm text-gray-600 mb-2">Generated QR Code</p>
-                    <img src={processBatch.currentQRCode} alt="QR Code" className="mx-auto" />
-                    <p className="text-xs text-gray-500 mt-2">Printing to label...</p>
-                  </div>
-                )}
-
-                <button
-                  onClick={handleNextStep}
-                  disabled={isProcessingStep || currentWeight === null}
-                  className="w-full py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 font-semibold text-lg"
-                >
-                  {isProcessingStep ? 'Processing & Printing Label...' : 'NEXT ➔'}
-                </button>
               </div>
             )}
+
+          {/* Completion Button */}
+          {processBatch.currentStepIndex >= (processBatch.currentRecipe.steps?.length || 0) && (
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="text-center mb-4">
+                <div className="inline-block p-3 bg-green-100 rounded-full mb-3">
+                  <svg
+                    className="w-12 h-12 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-green-700 mb-2">All Steps Completed!</h3>
+                <p className="text-gray-600 mb-4">
+                  All {processBatch.currentRecipe.steps?.length} steps have been scanned
+                  successfully.
+                </p>
+              </div>
+
+              <button
+                onClick={handleCompleteBatch}
+                disabled={isCompleting}
+                className="w-full py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:bg-gray-300 font-semibold text-lg"
+              >
+                {isCompleting ? 'Completing...' : 'Complete Batch (Mark as PROCESSED)'}
+              </button>
+            </div>
+          )}
         </div>
       )}
-
-      {/* Hidden canvas for QR code generation */}
-      <canvas ref={qrCanvasRef} style={{ display: 'none' }} />
     </div>
   );
 };

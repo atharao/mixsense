@@ -63,13 +63,47 @@ export const printLabel = async (params: PrintLabelParams): Promise<void> => {
 };
 
 /**
- * Format QR data according to specification: Saumya|step|material|weight
+ * Format QR data with complete batch information
+ * Format: recipeId|recipeName|stepId|stepOrder|materialCode|materialName|actualWeight|userId|timestamp|setpoint|tolerance
  */
-export const formatQRData = (
-  stepNumber: number,
-  materialCode: string,
-  materialName: string,
-  weight: number,
-): string => {
-  return `Saumya|${stepNumber}|${materialCode}|${materialName}|${weight}`;
+export const formatQRData = (data: {
+  recipeId: number;
+  recipeName: string;
+  stepId: number;
+  stepOrder: number;
+  materialCode: string;
+  materialName: string;
+  actualWeight: number;
+  userId: number;
+  setpoint: number;
+  tolerance: number;
+}): string => {
+  const timestamp = new Date().toISOString();
+  return `${data.recipeId}|${data.recipeName}|${data.stepId}|${data.stepOrder}|${data.materialCode}|${data.materialName}|${data.actualWeight}|${data.userId}|${timestamp}|${data.setpoint}|${data.tolerance}`;
+};
+
+/**
+ * Parse QR data back into structured format
+ * Format: recipeId|recipeName|stepId|stepOrder|materialCode|materialName|actualWeight|userId|timestamp|setpoint|tolerance
+ */
+export const parseQRData = (qrData: string) => {
+  const parts = qrData.split('|');
+
+  if (parts.length < 11) {
+    throw new Error('Invalid QR code format');
+  }
+
+  return {
+    recipeId: parseInt(parts[0]),
+    recipeName: parts[1],
+    stepId: parseInt(parts[2]),
+    stepOrder: parseInt(parts[3]),
+    materialCode: parts[4],
+    materialName: parts[5],
+    actualWeight: parseFloat(parts[6]),
+    userId: parseInt(parts[7]),
+    timestamp: parts[8],
+    setpoint: parseFloat(parts[9]),
+    tolerance: parseFloat(parts[10]),
+  };
 };

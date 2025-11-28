@@ -13,6 +13,7 @@ const DEFAULT_WS_URL = import.meta.env.VITE_WEIGHT_WS_URL || 'ws://localhost:188
 export const useWebSocket = (wsUrl: string = DEFAULT_WS_URL) => {
   const dispatch = useDispatch();
   const [isConnected, setIsConnected] = useState(false);
+  const [hasDataReceived, setHasDataReceived] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentWeight, setCurrentWeight] = useState<number | null>(null);
   const [isStable, setIsStable] = useState(false);
@@ -131,6 +132,7 @@ export const useWebSocket = (wsUrl: string = DEFAULT_WS_URL) => {
       if (weight !== null) {
         console.log(`✓ Parsed weight: ${weight} KG, Stable: ${stable}`);
         setCurrentWeight(weight);
+        setHasDataReceived(true); // Mark that we're receiving data
         checkStability(weight);
 
         // Dispatch to Redux
@@ -186,11 +188,13 @@ export const useWebSocket = (wsUrl: string = DEFAULT_WS_URL) => {
         console.error('❌ WebSocket error:', err);
         setError('WebSocket connection error');
         setIsConnected(false);
+        setHasDataReceived(false);
       };
 
       ws.onclose = () => {
         console.log('🔌 WebSocket connection closed');
         setIsConnected(false);
+        setHasDataReceived(false);
 
         // Attempt to reconnect after 3 seconds
         reconnectTimeoutRef.current = setTimeout(() => {
@@ -224,6 +228,7 @@ export const useWebSocket = (wsUrl: string = DEFAULT_WS_URL) => {
         wsRef.current.close();
         wsRef.current = null;
         setIsConnected(false);
+        setHasDataReceived(false);
         setCurrentWeight(null);
         setIsStable(false);
         previousWeightRef.current = null;
@@ -250,6 +255,7 @@ export const useWebSocket = (wsUrl: string = DEFAULT_WS_URL) => {
 
   return {
     isConnected,
+    hasDataReceived,
     error,
     currentWeight,
     isStable,

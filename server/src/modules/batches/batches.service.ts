@@ -626,7 +626,7 @@ export class BatchesService {
   }
 
   /**
-   * Log a step in a process batch with QR code generation
+   * Log a step in a process batch with QR code generation or scanning
    */
   async logProcessStep(
     batchId: number,
@@ -636,7 +636,8 @@ export class BatchesService {
       actualWeight: number;
       setpointSnapshot: number;
       toleranceSnapshot: number;
-      generatedQrCode: string;
+      generatedQrCode?: string;
+      scannedQrCode?: string;
     },
   ) {
     // Validate batch exists and is in progress
@@ -679,7 +680,7 @@ export class BatchesService {
       throw new Error('Material does not match step requirements');
     }
 
-    // Create batch log with generated QR code
+    // Create batch log with generated or scanned QR code
     const log = await prisma.batchLog.create({
       data: {
         batchId,
@@ -689,6 +690,7 @@ export class BatchesService {
         setpointSnapshot: data.setpointSnapshot,
         toleranceSnapshot: data.toleranceSnapshot,
         generatedQrCode: data.generatedQrCode,
+        scannedQrCode: data.scannedQrCode,
       },
       include: {
         step: {

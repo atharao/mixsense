@@ -83,8 +83,20 @@ Each module contains:
 src/
 ├── api/          # Axios instance with interceptors
 ├── components/   # Reusable UI components
-├── hooks/        # Custom React hooks (useLoadCell, useQrScanner)
-├── pages/        # Page components (Dashboard, RunBatch, etc.)
+│   ├── StepProgressIndicator.tsx  # Green step boxes progress indicator
+│   └── ZplBarcodePopup.tsx        # QR code display popup during printing
+├── hooks/        # Custom React hooks
+│   ├── useWebSocket.ts            # Weight data from Node-RED (Process Recipe)
+│   ├── useBarcodeScanner.ts       # Barcode scan data (Process Batch)
+│   ├── useLoadCell.ts             # Legacy Web Serial API
+│   └── useQrScanner.ts            # Legacy HID scanner
+├── pages/        # Page components
+│   ├── ProcessRecipe.tsx          # Material preparation with weight monitoring
+│   ├── ProcessBatch.tsx           # Batch execution with barcode scanning
+│   ├── Dashboard.tsx
+│   └── ...
+├── services/     # Service utilities
+│   └── zplPrinter.ts              # ZPL printer service with QR formatting
 ├── store/        # Redux slices (auth, batch, materials, recipes, ui)
 └── types/        # TypeScript type definitions
 ```
@@ -92,8 +104,9 @@ src/
 **Key Patterns:**
 - **Redux State Management**: Global state for auth, active batch, current weight, materials, recipes
 - **Axios Interceptors**: Auto-attach JWT token to requests, handle 401 errors globally
-- **Custom Hooks**: Hardware integration abstracted into reusable hooks
+- **Custom Hooks**: Hardware integration abstracted into reusable hooks with `hasDataReceived` flag
 - **Path Aliases**: Use `@/` for imports (configured in tsconfig.json and vite.config.ts)
+- **Step Progress Indicator**: Reusable component showing green boxes for completed steps, blue for current, gray for pending
 
 ### Database Schema (Prisma)
 
@@ -134,7 +147,8 @@ LOG_LEVEL=info
 VITE_API_URL=http://localhost:5000/api
 
 # Node-RED WebSocket Configuration
-VITE_WEIGHT_WS_URL=ws://localhost:1880/ws/weight
+VITE_WEIGHT_WS_URL=ws://localhost:1880/ws/weight        # Used in Process Recipe
+VITE_BARCODE_WS_URL=ws://localhost:1880/ws/barcode      # Used in Process Batch
 
 # ZPL Printer Service (optional)
 VITE_ZPL_PRINTER_URL=http://localhost:9100/
@@ -148,29 +162,49 @@ cp client/.env.example client/.env
 
 ## Key Features & Implementation Details
 
-### 1. Batch Execution Flow (Process Batch)
-Operators execute recipe steps with real-time weight monitoring via Node-RED WebSocket and ZPL label printing:
+### 1. Process Recipe (Material Preparation)
+**Purpose**: Operators fill raw materials into packets, print barcodes, and stick them on packets for later use in Process Batch.
 
+**Flow**:
+1. **Select Recipe**: User selects recipe from dropdown
+2. **Recipe Starts**: NO database batch is created (this is a preparation phase only)
+3. **WebSocket Connection**: Connects to ws://localhost:1880/ws/weight
+4. **Status Display**: Shows "CONNECTED" only when weight data is actually being received (not just on connection)
+5. **Display All Steps**: All recipe steps shown with progress indicator (green boxes for completed, blue for current, gray for pending)
+6. **For Each Step**:
+   - Real-time weight monitoring from Node-RED WebSocket
+   - Display material info, setpoint, tolerance
+   - User monitors weight until it matches setpoint
+   - Click **NEXT** button when ready
+7. **On NEXT Click**:
+   - Generate enhanced QR code with format: `recipeId|recipeName|stepId|stepOrder|materialCode|materialName|actualWeight|userId|timestamp|setpoint|tolerance`
+   - Display QR code popup temporarily
+   - Call ZPL Printer API (POST http://localhost:9100/) to print label
+   - After 3 seconds: move to next step
+8. **After All Steps**: Alert shown, reset to recipe selection
+9. **NO DATA SAVED TO DATABASE** - This is preparation only
+
+### 2. Process Batch (Batch Execution with Scanned Packets)
+**Purpose**: Operators scan pre-prepared barcoded packets to log material usage into the system.
+
+**Flow**:
 1. **Select Recipe**: User selects recipe from dropdown
 2. **Start Process Batch**: POST `/api/batches/process/start` creates batch with IN_PROGRESS status
-3. **Display All Steps**: All recipe steps are displayed at once, with current step highlighted
-4. **Weight Monitoring**: Real-time weight data from Node-RED via WebSocket (ws://localhost:1880/ws/weight)
-5. **Step Execution**:
-   - System auto-displays: material code, material name, setpoint, tolerance
-   - Weight updates in real-time from Node-RED WebSocket
-   - Operator monitors weight until satisfied
-   - Click **NEXT** button when ready
-6. **On NEXT Click**:
-   - Generate QR code with format: `Saumya|stepNumber|materialCode|materialName|weight`
-   - Display QR code on screen temporarily
-   - Call ZPL Printer API (POST http://localhost:9100/) to print label with:
-     - Material Name
-     - Final Weight
-     - QR Code
-   - After successful print: Log step via POST `/api/batches/process/:id/log-step`
-   - Move to next step (highlight next, clear QR)
-7. **After All Steps**: Navigate to Batch Summary screen
-8. **Complete Batch**: User confirms completion, status set to PROCESSED
+3. **WebSocket Connection**: Connects to ws://localhost:1880/ws/barcode
+4. **Status Display**: Shows "CONNECTED" only when barcode data is actually being received
+5. **Display All Steps**: All recipe steps shown with progress indicator
+6. **For Each Step**:
+   - System waits for barcode scan
+   - Barcode scanner sends data via Node-RED WebSocket
+   - Frontend receives and validates barcode data:
+     - Checks recipe ID matches
+     - Checks step ID matches
+     - Checks material code matches
+   - If valid: sends to backend via POST `/api/batches/process/:id/log-step`
+   - Backend logs to database with scannedQrCode data
+   - Move to next step automatically
+7. **After All Steps**: Prompt to complete batch
+8. **Complete Batch**: Status set to PROCESSED, all data persisted in database
 
 **ZPL Label Format:**
 ```zpl
@@ -192,51 +226,57 @@ isWithinTolerance = actualWeight >= (setpoint - toleranceRange)
                  && actualWeight <= (setpoint + toleranceRange)
 ```
 
-**Key Differences from Old Flow:**
-- No more Web Serial API load cell integration
-- No more QR scanner validation
-- Node-RED WebSocket provides weight data instead
-- ZPL API prints labels instead of generating/saving QR codes in DB
-- All steps visible at once (not step-by-step navigation)
-- Summary screen shown after completion
+### 3. Hardware Integration
 
-### 2. Hardware Integration
-
-**Node-RED WebSocket Weight Monitor:**
-- Located in `client/src/hooks/useWebSocket.ts`
-- **Connects directly to Node-RED WebSocket endpoint** (ws://localhost:1880/ws/weight)
+**Node-RED WebSocket Weight Monitor (Process Recipe):**
+- Hook: `client/src/hooks/useWebSocket.ts`
+- Endpoint: ws://localhost:1880/ws/weight
+- Used in: Process Recipe page
 - Receives real-time weight data every second from Node-RED
-- Supports message formats:
+- Supported message formats:
   - Simple numeric: "1234.56"
   - JSON: `{"weight": 1234.56, "stable": true}`
   - With units: "1234.56 kg"
-- Updates Redux store with `dispatch(updateLoadCellData())`
-- Auto-connects on component mount
-- Implements stability checking algorithm
+- Features:
+  - `hasDataReceived` flag: true only when data is actively coming in
+  - Stability checking algorithm
+  - Auto-reconnect on disconnect
+
+**Node-RED Barcode Scanner (Process Batch):**
+- Hook: `client/src/hooks/useBarcodeScanner.ts`
+- Endpoint: ws://localhost:1880/ws/barcode
+- Used in: Process Batch page
+- Receives barcode scan data from scanner via Node-RED
+- Supported message formats:
+  - Pipe-delimited: `recipeId|recipeName|stepId|stepOrder|materialCode|materialName|actualWeight|userId|timestamp|setpoint|tolerance`
+  - JSON: `{"recipeId": 1, "recipeName": "...", ...}`
+- Features:
+  - Parses and validates barcode data
+  - `hasDataReceived` flag for connection status
+  - Auto-reconnect on disconnect
 
 **Node-RED Setup:**
-- Configure Node-RED to expose weight data via WebSocket on `/ws/weight`
-- Typical port: 1880 (default Node-RED HTTP/WebSocket port)
-- Data should be published every second for real-time monitoring
+1. Configure Node-RED to expose weight data on `/ws/weight` (port 1880)
+2. Configure Node-RED to expose barcode scan data on `/ws/barcode` (port 1880)
+3. Data should be published in real-time as it arrives
 
 **ZPL Printer Integration:**
-- Located in `client/src/services/zplPrinter.ts`
-- Prints labels via HTTP API (POST http://localhost:9100/)
+- Service: `client/src/services/zplPrinter.ts`
+- API: POST http://localhost:9100/
 - Printer: ZDesigner ZD421-300dpi ZPL
-- Generates ZPL code with:
-  - Material name
-  - Final weight (in KG)
-  - QR code with data format: `Saumya|step|material|weight`
 - Label dimensions: 886x591 dots
+- Functions:
+  - `formatQRData()`: Creates enhanced barcode data string with all required fields
+  - `parseQRData()`: Parses barcode string back to structured data
+  - `printLabel()`: Generates ZPL code and sends to printer
 - QR codes generated client-side using `qrcode` library
-- No QR codes saved to database (temporary generation only)
+- Barcode data includes: recipe, step, material, weight, user, timestamp, setpoint, tolerance
 
-**Legacy Hardware (No Longer Used in Process Batch):**
-- Load Cell via Web Serial API (still available in `useLoadCell.ts` for other features)
-- QR Scanner HID mode (still available in `useQrScanner.ts` for other features)
-- MQTT broker integration (replaced by direct Node-RED WebSocket connection)
+**Legacy Hardware (Still Available):**
+- Load Cell via Web Serial API (in `useLoadCell.ts` for other features)
+- QR Scanner HID mode (in `useQrScanner.ts` for other features)
 
-### 3. Authentication & Authorization
+### 4. Authentication & Authorization
 
 **Backend:**
 - JWT tokens with 8h expiration
@@ -253,7 +293,7 @@ isWithinTolerance = actualWeight >= (setpoint - toleranceRange)
 **Type Safety:**
 - Express Request extended in `server/src/types/express.ts` to include `user` property
 
-### 4. Report Generation
+### 5. Report Generation
 
 **Excel Export (ExcelJS):**
 - Located in `server/src/modules/reports/reports.service.ts`
