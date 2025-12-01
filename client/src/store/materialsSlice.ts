@@ -40,11 +40,11 @@ const materialsSlice = createSlice({
       state.selectedMaterial = action.payload;
     },
     addMaterial: (state, action: PayloadAction<Material>) => {
-      state.materials.push(action.payload);
+      state.materials.unshift(action.payload);
       if (action.payload.type === 'INGREDIENT') {
-        state.ingredients.push(action.payload);
+        state.ingredients.unshift(action.payload);
       } else if (action.payload.type === 'EQUIPMENT') {
-        state.equipment.push(action.payload);
+        state.equipment.unshift(action.payload);
       }
     },
     updateMaterial: (state, action: PayloadAction<Material>) => {

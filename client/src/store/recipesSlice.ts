@@ -34,7 +34,7 @@ const recipesSlice = createSlice({
       state.selectedRecipe = action.payload;
     },
     addRecipe: (state, action: PayloadAction<Recipe>) => {
-      state.recipes.push(action.payload);
+      state.recipes.unshift(action.payload);
     },
     updateRecipe: (state, action: PayloadAction<Recipe>) => {
       const index = state.recipes.findIndex(r => r.id === action.payload.id);

@@ -332,7 +332,7 @@ const ProcessBatch: React.FC = () => {
 
       {/* Recipe Selection */}
       {!processBatch.activeBatch && (
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow p-6 mb-96">
           <h2 className="text-xl font-semibold mb-4">Start Process Batch</h2>
 
           <div className="mb-4">
@@ -340,7 +340,7 @@ const ProcessBatch: React.FC = () => {
             <select
               value={selectedRecipeId}
               onChange={e => setSelectedRecipeId(Number(e.target.value))}
-              className="w-full p-2 border rounded"
+              className="input"
             >
               <option value={0}>-- Select a recipe --</option>
               {recipes.map((recipe: any) => (
