@@ -25,6 +25,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const navLinks = [
     { path: '/dashboard', label: 'Dashboard', icon: '📊', allowedRoles: ['ADMIN', 'OPERATOR'] },
+    { path: '/materials', label: 'Materials', icon: '📦', allowedRoles: ['ADMIN'] },
+    { path: '/recipes', label: 'Recipes', icon: '📖', allowedRoles: ['ADMIN', 'OPERATOR'] },
     {
       path: '/process-recipe',
       label: 'Process Recipe',
@@ -37,8 +39,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       icon: '🔬',
       allowedRoles: ['ADMIN', 'OPERATOR'],
     },
-    { path: '/recipes', label: 'Recipes', icon: '📖', allowedRoles: ['ADMIN', 'OPERATOR'] },
-    { path: '/materials', label: 'Materials', icon: '📦', allowedRoles: ['ADMIN'] },
     { path: '/reports', label: 'Reports', icon: '📈', allowedRoles: ['ADMIN', 'OPERATOR'] },
     { path: '/users', label: 'Users', icon: '👥', allowedRoles: ['ADMIN'] },
   ];

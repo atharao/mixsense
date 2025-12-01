@@ -17,6 +17,11 @@ export default defineConfig({
         target: 'http://localhost:5000',
         changeOrigin: true,
       },
+      '/zpl': {
+        target: 'http://localhost:9100',
+        changeOrigin: true,
+        rewrite: path => path.replace(/^\/zpl/, ''),
+      },
     },
   },
   build: {
