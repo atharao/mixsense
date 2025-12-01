@@ -102,8 +102,8 @@ const Materials: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Materials</h2>
-          <p className="text-gray-500">Manage materials for recipes</p>
+          <h2 className="text-2xl font-bold">Material Library</h2>
+          <p className="text-gray-500">Manage ingredients and raw materials</p>
         </div>
         <button onClick={() => handleOpenModal()} className="btn-primary">
           + Add Material

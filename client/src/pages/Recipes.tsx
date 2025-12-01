@@ -238,8 +238,8 @@ const Recipes: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Recipes</h2>
-          <p className="text-gray-500">Manage mixing recipes and formulas</p>
+          <h2 className="text-2xl font-bold">Recipe Management</h2>
+          <p className="text-gray-500">Create and manage mixing formulas</p>
         </div>
         <div className="flex gap-3">
           <button

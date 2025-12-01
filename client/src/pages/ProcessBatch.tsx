@@ -336,10 +336,8 @@ const ProcessBatch: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold">Process Batch</h2>
-        <p className="text-gray-500">
-          Scan barcoded packets to log material usage into the system.
-        </p>
+        <h2 className="text-2xl font-bold">Batch Execution</h2>
+        <p className="text-gray-500">Scan pre-packaged materials to record batch production</p>
       </div>
 
       {/* Barcode Scanner Connection Status - Only show when batch is active */}

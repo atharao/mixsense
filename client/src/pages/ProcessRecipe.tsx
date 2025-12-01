@@ -240,10 +240,9 @@ const ProcessRecipe: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold">Process Recipe</h2>
+        <h2 className="text-2xl font-bold">Material Preparation</h2>
         <p className="text-gray-500">
-          Fill raw materials into packets, print barcodes, and stick them on packets for later use
-          in Process Batch.
+          Weigh and package materials with barcode labels for batch processing
         </p>
       </div>
 

@@ -136,7 +136,7 @@ const UserManagement: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">User Management</h2>
+          <h2 className="text-2xl font-bold">Access Control</h2>
           <p className="text-gray-500">Manage system users and permissions</p>
         </div>
         <button onClick={() => handleOpenModal()} className="btn-primary">
