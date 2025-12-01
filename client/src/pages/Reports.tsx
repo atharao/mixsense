@@ -313,7 +313,7 @@ const Reports: React.FC = () => {
                           <td className="font-semibold">{log.step?.stepOrder}</td>
                           <td>{log.material?.name}</td>
                           <td className="font-mono text-sm">{log.material?.code}</td>
-                          <td>{log.setpointSnapshot.toFixed(2)}g</td>
+                          <td>{Number(log.setpointSnapshot).toFixed(2)}g</td>
                           <td
                             className={
                               isWithinTolerance(log)
@@ -321,7 +321,7 @@ const Reports: React.FC = () => {
                                 : 'text-danger-600 font-semibold'
                             }
                           >
-                            {log.actualWeight.toFixed(2)}g
+                            {Number(log.actualWeight).toFixed(2)}g
                           </td>
                           <td>±{log.toleranceSnapshot}%</td>
                           <td>

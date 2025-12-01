@@ -367,13 +367,13 @@ const Recipes: React.FC = () => {
                             <span className="text-gray-400 ml-2">
                               (
                               {(
-                                step.setpoint -
-                                (step.setpoint * step.tolerancePercent) / 100
+                                Number(step.setpoint) -
+                                (Number(step.setpoint) * Number(step.tolerancePercent)) / 100
                               ).toFixed(2)}
                               g -{' '}
                               {(
-                                step.setpoint +
-                                (step.setpoint * step.tolerancePercent) / 100
+                                Number(step.setpoint) +
+                                (Number(step.setpoint) * Number(step.tolerancePercent)) / 100
                               ).toFixed(2)}
                               g)
                             </span>

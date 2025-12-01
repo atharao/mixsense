@@ -16,6 +16,7 @@ interface ProcessRecipeState {
   completedSteps: number[];
   isProcessing: boolean;
   currentQRCode: string | null;
+  frozenWeight: number | null; // Frozen weight value for QR code display
 }
 
 const ProcessRecipe: React.FC = () => {
@@ -32,13 +33,30 @@ const ProcessRecipe: React.FC = () => {
     completedSteps: [],
     isProcessing: false,
     currentQRCode: null,
+    frozenWeight: null,
   });
 
-  const { isConnected, hasDataReceived, error: wsError, currentWeight, isStable } = useWebSocket();
+  // Use WebSocket with manual connection control (no auto-connect)
+  const {
+    isConnected,
+    hasDataReceived,
+    error: wsError,
+    currentWeight,
+    isStable,
+    connect,
+    disconnect,
+  } = useWebSocket(undefined, { autoConnect: false });
 
   useEffect(() => {
+    console.log('🟢 ProcessRecipe component mounted');
     loadRecipes();
-  }, []);
+
+    // Cleanup: disconnect WebSocket when component unmounts or user navigates away
+    return () => {
+      console.log('🔴 ProcessRecipe component unmounting - disconnecting WebSocket');
+      disconnect();
+    };
+  }, []); // Run only once on mount, disconnect on unmount
 
   const loadRecipes = async () => {
     try {
@@ -66,7 +84,12 @@ const ProcessRecipe: React.FC = () => {
         completedSteps: [],
         isProcessing: false,
         currentQRCode: null,
+        frozenWeight: null,
       });
+
+      // Connect to WebSocket when recipe is selected
+      console.log('🟢 ProcessRecipe: Calling connect() because user clicked Start Process Recipe');
+      connect();
 
       setIsStarting(false);
     } catch (error: any) {
@@ -115,9 +138,11 @@ const ProcessRecipe: React.FC = () => {
     }
 
     try {
-      setProcessRecipe(prev => ({ ...prev, isProcessing: true }));
+      // Freeze the current weight value for QR code generation
+      const frozenWeightValue = currentWeight;
+      setProcessRecipe(prev => ({ ...prev, isProcessing: true, frozenWeight: frozenWeightValue }));
 
-      // Format QR data with complete information
+      // Format QR data with complete information using frozen weight
       const qrData = formatQRData({
         recipeId: processRecipe.currentRecipe.id,
         recipeName: processRecipe.currentRecipe.name,
@@ -125,7 +150,7 @@ const ProcessRecipe: React.FC = () => {
         stepOrder: currentStep.stepOrder,
         materialCode: currentStep.material!.code,
         materialName: currentStep.material!.name,
-        actualWeight: currentWeight,
+        actualWeight: frozenWeightValue,
         userId: user.id,
         setpoint: setpoint,
         tolerance: tolerance,
@@ -135,12 +160,18 @@ const ProcessRecipe: React.FC = () => {
       const qrCodeImage = await generateQRCodeImage(qrData);
       setProcessRecipe(prev => ({ ...prev, currentQRCode: qrCodeImage }));
 
-      // Print label via ZPL API
-      await printLabel({
-        materialName: currentStep.material!.name,
-        weight: currentWeight,
-        qrData: qrData,
-      });
+      // Print label via ZPL API - continue even if printer fails
+      try {
+        await printLabel({
+          materialName: currentStep.material!.name,
+          weight: frozenWeightValue,
+          qrData: qrData,
+        });
+        console.log('✓ Label printed successfully');
+      } catch (printerError: any) {
+        console.warn('⚠ Printer error (continuing anyway):', printerError.message);
+        // Continue to next step even if printer fails
+      }
 
       // Move to next step after successful print
       const newCompletedSteps = [...processRecipe.completedSteps, processRecipe.currentStepIndex];
@@ -154,11 +185,14 @@ const ProcessRecipe: React.FC = () => {
           currentStepIndex: nextStepIndex,
           isProcessing: false,
           currentQRCode: null,
+          frozenWeight: null,
         });
 
         // Check if all steps are completed
         if (nextStepIndex >= (processRecipe.currentRecipe?.steps?.length || 0)) {
           alert('All steps completed! You can now use these packets in Process Batch.');
+          // Disconnect WebSocket when process is complete
+          disconnect();
           // Reset to recipe selection
           setProcessRecipe({
             currentRecipe: null,
@@ -166,13 +200,19 @@ const ProcessRecipe: React.FC = () => {
             completedSteps: [],
             isProcessing: false,
             currentQRCode: null,
+            frozenWeight: null,
           });
           setSelectedRecipeId(0);
         }
       }, 3000);
     } catch (error: any) {
       alert(error.message || 'Failed to process step');
-      setProcessRecipe(prev => ({ ...prev, isProcessing: false, currentQRCode: null }));
+      setProcessRecipe(prev => ({
+        ...prev,
+        isProcessing: false,
+        currentQRCode: null,
+        frozenWeight: null,
+      }));
     }
   };
 
@@ -199,38 +239,44 @@ const ProcessRecipe: React.FC = () => {
         Process Batch.
       </p>
 
-      {/* WebSocket Connection Status */}
-      <div className="mb-6 bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-semibold mb-4">Weight Monitor</h2>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold">Status:</span>
-            <span
-              className={`px-3 py-1 rounded ${
-                hasDataReceived ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
-              }`}
-            >
-              {hasDataReceived ? 'CONNECTED' : isConnected ? 'Waiting for data...' : 'Disconnected'}
-            </span>
-          </div>
-
-          {hasDataReceived && (
+      {/* WebSocket Connection Status - Only show when recipe is selected */}
+      {processRecipe.currentRecipe && (
+        <div className="mb-6 bg-white rounded-lg shadow p-6">
+          <h2 className="text-xl font-semibold mb-4">Weight Monitor</h2>
+          <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <span className="font-semibold">Current Weight:</span>
+              <span className="font-semibold">Status:</span>
               <span
-                className={`px-3 py-1 rounded text-xl font-bold ${
-                  isStable ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'
+                className={`px-3 py-1 rounded ${
+                  hasDataReceived ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
                 }`}
               >
-                {currentWeight !== null ? currentWeight.toFixed(2) : '0.00'} KG
-                {isStable && ' (Stable)'}
+                {hasDataReceived
+                  ? 'CONNECTED'
+                  : isConnected
+                    ? 'Waiting for data...'
+                    : 'Disconnected'}
               </span>
             </div>
-          )}
 
-          {wsError && <div className="text-red-600">Error: {wsError}</div>}
+            {hasDataReceived && (
+              <div className="flex items-center gap-2">
+                <span className="font-semibold">Current Weight:</span>
+                <span
+                  className={`px-3 py-1 rounded text-xl font-bold ${
+                    isStable ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'
+                  }`}
+                >
+                  {currentWeight !== null ? currentWeight.toFixed(2) : '0.00'} KG
+                  {isStable && ' (Stable)'}
+                </span>
+              </div>
+            )}
+
+            {wsError && <div className="text-red-600">Error: {wsError}</div>}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Recipe Selection */}
       {!processRecipe.currentRecipe && (
@@ -411,7 +457,7 @@ const ProcessRecipe: React.FC = () => {
         <ZplBarcodePopup
           qrCodeImage={processRecipe.currentQRCode}
           materialName={currentStep.material?.name || 'Unknown'}
-          weight={currentWeight || 0}
+          weight={processRecipe.frozenWeight || 0}
           onClose={() => {}}
         />
       )}

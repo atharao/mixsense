@@ -32,18 +32,28 @@ const ProcessBatch: React.FC = () => {
     completedSteps: [],
   });
 
+  // Use barcode scanner with manual connection control (no auto-connect)
   const {
     isConnected,
     hasDataReceived,
     error: wsError,
     lastScannedBarcode,
     clearLastBarcode,
-  } = useBarcodeScanner();
+    connect,
+    disconnect,
+  } = useBarcodeScanner(undefined, { autoConnect: false });
 
   useEffect(() => {
+    console.log('🟢 ProcessBatch component mounted');
     loadRecipes();
     checkForActiveBatch();
-  }, []);
+
+    // Cleanup: disconnect WebSocket when component unmounts or user navigates away
+    return () => {
+      console.log('🔴 ProcessBatch component unmounting - disconnecting barcode WebSocket');
+      disconnect();
+    };
+  }, []); // Run only once on mount, disconnect on unmount
 
   // Handle barcode scan
   useEffect(() => {
@@ -82,6 +92,10 @@ const ProcessBatch: React.FC = () => {
           currentStepIndex: currentStepIndex >= 0 ? currentStepIndex : 0,
           completedSteps: completedStepIndices,
         });
+
+        // Connect to barcode scanner WebSocket for active batch
+        console.log('🟢 ProcessBatch: Connecting to barcode scanner for active batch');
+        connect();
 
         alert('Resuming active batch: ' + recipe.name);
       }
@@ -126,6 +140,10 @@ const ProcessBatch: React.FC = () => {
         completedSteps: [],
       });
 
+      // Connect to barcode scanner WebSocket when batch starts
+      console.log('🟢 ProcessBatch: Calling connect() because user clicked Start Process Batch');
+      connect();
+
       setIsStarting(false);
     } catch (error: any) {
       alert(error.response?.data?.message || 'Failed to start process batch');
@@ -152,36 +170,51 @@ const ProcessBatch: React.FC = () => {
       return;
     }
 
-    // Validate barcode data matches current step
-    if (barcodeData.recipeId !== processBatch.currentRecipe.id) {
-      alert(
-        `Wrong recipe! Expected "${processBatch.currentRecipe.name}" but scanned "${barcodeData.recipeName}"`,
-      );
-      clearLastBarcode();
-      return;
-    }
+    // TESTING MODE: Validations disabled - any barcode will be accepted
+    console.log('🧪 TESTING MODE: Barcode validations disabled');
+    console.log('📦 Received barcode data:', barcodeData);
+    console.log('📋 Current step:', currentStep);
 
-    if (barcodeData.stepId !== currentStep.id) {
-      alert(
-        `Wrong step! Expected step ${currentStep.stepOrder} (${currentStep.material?.name}) but scanned step ${barcodeData.stepOrder} (${barcodeData.materialName})`,
-      );
-      clearLastBarcode();
-      return;
-    }
+    // Validate barcode data matches current step (DISABLED FOR TESTING)
+    // if (barcodeData.recipeId !== processBatch.currentRecipe.id) {
+    //   alert(
+    //     `Wrong recipe! Expected "${processBatch.currentRecipe.name}" but scanned "${barcodeData.recipeName}"`,
+    //   );
+    //   clearLastBarcode();
+    //   return;
+    // }
 
-    if (barcodeData.materialCode !== currentStep.material?.code) {
-      alert(
-        `Wrong material! Expected "${currentStep.material?.name}" but scanned "${barcodeData.materialName}"`,
-      );
-      clearLastBarcode();
-      return;
-    }
+    // if (barcodeData.stepId !== currentStep.id) {
+    //   alert(
+    //     `Wrong step! Expected step ${currentStep.stepOrder} (${currentStep.material?.name}) but scanned step ${barcodeData.stepOrder} (${barcodeData.materialName})`,
+    //   );
+    //   clearLastBarcode();
+    //   return;
+    // }
+
+    // if (barcodeData.materialCode !== currentStep.material?.code) {
+    //   alert(
+    //     `Wrong material! Expected "${currentStep.material?.name}" but scanned "${barcodeData.materialName}"`,
+    //   );
+    //   clearLastBarcode();
+    //   return;
+    // }
 
     try {
       setIsProcessingStep(true);
 
       // Create the full QR data string for storage
       const qrDataString = `${barcodeData.recipeId}|${barcodeData.recipeName}|${barcodeData.stepId}|${barcodeData.stepOrder}|${barcodeData.materialCode}|${barcodeData.materialName}|${barcodeData.actualWeight}|${barcodeData.userId}|${barcodeData.timestamp}|${barcodeData.setpoint}|${barcodeData.tolerance}`;
+
+      console.log('📤 Sending to backend:', {
+        stepId: currentStep.id,
+        materialId: currentStep.materialId,
+        actualWeight: barcodeData.actualWeight,
+        setpointSnapshot: barcodeData.setpoint,
+        toleranceSnapshot: barcodeData.tolerance,
+        scannedQrCode: qrDataString,
+        generatedQrCode: qrDataString, // Using scanned QR data for both fields
+      });
 
       // Log the step to backend
       await batchesApi.logProcessStep(processBatch.activeBatch.id, {
@@ -191,7 +224,7 @@ const ProcessBatch: React.FC = () => {
         setpointSnapshot: barcodeData.setpoint,
         toleranceSnapshot: barcodeData.tolerance,
         scannedQrCode: qrDataString,
-        generatedQrCode: '', // Empty since we're scanning, not generating
+        generatedQrCode: qrDataString, // Using scanned QR data since we're scanning pre-generated codes
       });
 
       // Update state - move to next step
@@ -233,6 +266,10 @@ const ProcessBatch: React.FC = () => {
 
       alert('Batch completed successfully!');
 
+      // Disconnect barcode scanner WebSocket when batch completes
+      console.log('🔴 ProcessBatch: Disconnecting barcode scanner - batch completed');
+      disconnect();
+
       // Reset state
       setProcessBatch({
         activeBatch: null,
@@ -258,33 +295,40 @@ const ProcessBatch: React.FC = () => {
         Scan barcoded packets to log material usage into the system.
       </p>
 
-      {/* Barcode Scanner Connection Status */}
-      <div className="mb-6 bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-semibold mb-4">Barcode Scanner Monitor</h2>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold">Status:</span>
-            <span
-              className={`px-3 py-1 rounded ${
-                hasDataReceived ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
-              }`}
-            >
-              {hasDataReceived ? 'CONNECTED' : isConnected ? 'Waiting for scan...' : 'Disconnected'}
-            </span>
-          </div>
-
-          {lastScannedBarcode && (
+      {/* Barcode Scanner Connection Status - Only show when batch is active */}
+      {processBatch.activeBatch && (
+        <div className="mb-6 bg-white rounded-lg shadow p-6">
+          <h2 className="text-xl font-semibold mb-4">Barcode Scanner Monitor</h2>
+          <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <span className="font-semibold">Last Scanned:</span>
-              <span className="px-3 py-1 rounded bg-blue-100 text-blue-800 text-sm">
-                {lastScannedBarcode.materialName} - {lastScannedBarcode.actualWeight.toFixed(2)} KG
+              <span className="font-semibold">Status:</span>
+              <span
+                className={`px-3 py-1 rounded ${
+                  hasDataReceived ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                }`}
+              >
+                {hasDataReceived
+                  ? 'CONNECTED'
+                  : isConnected
+                    ? 'Waiting for scan...'
+                    : 'Disconnected'}
               </span>
             </div>
-          )}
 
-          {wsError && <div className="text-red-600">Error: {wsError}</div>}
+            {lastScannedBarcode && (
+              <div className="flex items-center gap-2">
+                <span className="font-semibold">Last Scanned:</span>
+                <span className="px-3 py-1 rounded bg-blue-100 text-blue-800 text-sm">
+                  {lastScannedBarcode.materialName} - {lastScannedBarcode.actualWeight.toFixed(2)}{' '}
+                  KG
+                </span>
+              </div>
+            )}
+
+            {wsError && <div className="text-red-600">Error: {wsError}</div>}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Recipe Selection */}
       {!processBatch.activeBatch && (

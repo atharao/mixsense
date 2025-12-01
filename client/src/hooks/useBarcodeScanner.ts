@@ -17,7 +17,18 @@ export interface BarcodeData {
 const DEFAULT_BARCODE_WS_URL =
   import.meta.env.VITE_BARCODE_WS_URL || 'ws://localhost:1880/ws/barcode';
 
-export const useBarcodeScanner = (wsUrl: string = DEFAULT_BARCODE_WS_URL) => {
+interface UseBarcodeScannerOptions {
+  autoConnect?: boolean;
+}
+
+export const useBarcodeScanner = (
+  wsUrl: string = DEFAULT_BARCODE_WS_URL,
+  options: UseBarcodeScannerOptions = {},
+) => {
+  const { autoConnect = true } = options;
+  console.log(
+    `🔧 useBarcodeScanner hook initialized with autoConnect: ${autoConnect}, wsUrl: ${wsUrl}`,
+  );
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastScannedBarcode, setLastScannedBarcode] = useState<BarcodeData | null>(null);
@@ -151,11 +162,14 @@ export const useBarcodeScanner = (wsUrl: string = DEFAULT_BARCODE_WS_URL) => {
         setIsConnected(false);
         setHasDataReceived(false);
 
-        // Attempt to reconnect after 3 seconds
-        reconnectTimeoutRef.current = setTimeout(() => {
-          console.log('🔄 Attempting to reconnect barcode scanner...');
-          connect();
-        }, 3000);
+        // Only auto-reconnect if autoConnect is enabled
+        if (autoConnect) {
+          // Attempt to reconnect after 3 seconds
+          reconnectTimeoutRef.current = setTimeout(() => {
+            console.log('🔄 Attempting to reconnect barcode scanner...');
+            connect();
+          }, 3000);
+        }
       };
 
       ws.onmessage = handleMessage;
@@ -166,7 +180,7 @@ export const useBarcodeScanner = (wsUrl: string = DEFAULT_BARCODE_WS_URL) => {
       console.error('Barcode WebSocket connection error:', err);
       return false;
     }
-  }, [wsUrl, handleMessage]);
+  }, [wsUrl, handleMessage, autoConnect]);
 
   /**
    * Disconnect from WebSocket
@@ -200,17 +214,73 @@ export const useBarcodeScanner = (wsUrl: string = DEFAULT_BARCODE_WS_URL) => {
   }, []);
 
   /**
-   * Auto-connect on mount and cleanup on unmount
+   * Auto-connect on mount (if enabled) and cleanup on unmount
    */
   useEffect(() => {
-    console.log('🔌 Auto-connecting to Node-RED Barcode WebSocket...');
-    connect();
+    const shouldConnect = autoConnect;
+    console.log(
+      `🔧 useBarcodeScanner useEffect running - autoConnect: ${autoConnect}, shouldConnect: ${shouldConnect}`,
+    );
+
+    if (shouldConnect) {
+      console.log('🔌 Auto-connecting to Node-RED Barcode WebSocket...');
+
+      // Inline connection logic to avoid dependency issues
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        console.log('⚠️ Barcode WebSocket already connected, skipping duplicate connection');
+        return;
+      }
+
+      try {
+        console.log(`Connecting to Node-RED Barcode WebSocket at ${wsUrl}...`);
+        const ws = new WebSocket(wsUrl);
+        wsRef.current = ws;
+
+        ws.onopen = () => {
+          console.log('✓ Barcode WebSocket connected successfully');
+          setIsConnected(true);
+          setError(null);
+        };
+
+        ws.onerror = err => {
+          console.error('❌ Barcode WebSocket error:', err);
+          setError('WebSocket connection error');
+          setIsConnected(false);
+          setHasDataReceived(false);
+        };
+
+        ws.onclose = () => {
+          console.log('🔌 Barcode WebSocket connection closed');
+          setIsConnected(false);
+          setHasDataReceived(false);
+        };
+
+        ws.onmessage = handleMessage;
+      } catch (err: any) {
+        setError(`Failed to connect to Barcode WebSocket: ${err.message}`);
+        console.error('Barcode WebSocket connection error:', err);
+      }
+    }
 
     return () => {
       console.log('🔌 Cleaning up Barcode WebSocket connection...');
-      disconnect();
+
+      // Clear reconnection timeout
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+
+      // Close WebSocket connection
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+        setIsConnected(false);
+        setHasDataReceived(false);
+        setLastScannedBarcode(null);
+      }
     };
-  }, [wsUrl]);
+  }, [wsUrl, autoConnect, handleMessage]);
 
   return {
     isConnected,

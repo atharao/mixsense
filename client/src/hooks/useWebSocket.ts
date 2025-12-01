@@ -10,7 +10,13 @@ interface WeightData {
 
 const DEFAULT_WS_URL = import.meta.env.VITE_WEIGHT_WS_URL || 'ws://localhost:1880/ws/weight';
 
-export const useWebSocket = (wsUrl: string = DEFAULT_WS_URL) => {
+interface UseWebSocketOptions {
+  autoConnect?: boolean;
+}
+
+export const useWebSocket = (wsUrl: string = DEFAULT_WS_URL, options: UseWebSocketOptions = {}) => {
+  const { autoConnect = true } = options;
+  console.log(`🔧 useWebSocket hook initialized with autoConnect: ${autoConnect}, wsUrl: ${wsUrl}`);
   const dispatch = useDispatch();
   const [isConnected, setIsConnected] = useState(false);
   const [hasDataReceived, setHasDataReceived] = useState(false);
@@ -196,11 +202,14 @@ export const useWebSocket = (wsUrl: string = DEFAULT_WS_URL) => {
         setIsConnected(false);
         setHasDataReceived(false);
 
-        // Attempt to reconnect after 3 seconds
-        reconnectTimeoutRef.current = setTimeout(() => {
-          console.log('🔄 Attempting to reconnect...');
-          connect();
-        }, 3000);
+        // Only auto-reconnect if autoConnect is enabled
+        if (autoConnect) {
+          // Attempt to reconnect after 3 seconds
+          reconnectTimeoutRef.current = setTimeout(() => {
+            console.log('🔄 Attempting to reconnect...');
+            connect();
+          }, 3000);
+        }
       };
 
       ws.onmessage = handleMessage;
@@ -211,7 +220,7 @@ export const useWebSocket = (wsUrl: string = DEFAULT_WS_URL) => {
       console.error('WebSocket connection error:', err);
       return false;
     }
-  }, [wsUrl, handleMessage]);
+  }, [wsUrl, handleMessage, autoConnect]);
 
   /**
    * Disconnect from WebSocket
@@ -241,17 +250,76 @@ export const useWebSocket = (wsUrl: string = DEFAULT_WS_URL) => {
   }, []);
 
   /**
-   * Auto-connect on mount and cleanup on unmount
+   * Auto-connect on mount (if enabled) and cleanup on unmount
    */
   useEffect(() => {
-    console.log('🔌 Auto-connecting to Node-RED WebSocket...');
-    connect();
+    const shouldConnect = autoConnect;
+    console.log(
+      `🔧 useWebSocket useEffect running - autoConnect: ${autoConnect}, shouldConnect: ${shouldConnect}`,
+    );
+
+    if (shouldConnect) {
+      console.log('🔌 Auto-connecting to Node-RED WebSocket...');
+
+      // Inline connection logic to avoid dependency on connect function
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        console.log('⚠️ WebSocket already connected, skipping duplicate connection');
+        return;
+      }
+
+      try {
+        console.log(`Connecting to Node-RED WebSocket at ${wsUrl}...`);
+        const ws = new WebSocket(wsUrl);
+        wsRef.current = ws;
+
+        ws.onopen = () => {
+          console.log('✓ WebSocket connected successfully');
+          setIsConnected(true);
+          setError(null);
+        };
+
+        ws.onerror = err => {
+          console.error('❌ WebSocket error:', err);
+          setError('WebSocket connection error');
+          setIsConnected(false);
+          setHasDataReceived(false);
+        };
+
+        ws.onclose = () => {
+          console.log('🔌 WebSocket connection closed');
+          setIsConnected(false);
+          setHasDataReceived(false);
+        };
+
+        ws.onmessage = handleMessage;
+      } catch (err: any) {
+        setError(`Failed to connect to WebSocket: ${err.message}`);
+        console.error('WebSocket connection error:', err);
+      }
+    }
 
     return () => {
       console.log('🔌 Cleaning up WebSocket connection...');
-      disconnect();
+
+      // Clear reconnection timeout
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+
+      // Close WebSocket connection
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+        setIsConnected(false);
+        setHasDataReceived(false);
+        setCurrentWeight(null);
+        setIsStable(false);
+        previousWeightRef.current = null;
+        stabilityCountRef.current = 0;
+      }
     };
-  }, [wsUrl]); // Only reconnect if URL changes
+  }, [wsUrl, autoConnect, handleMessage]); // Only depend on primitive values and stable callbacks
 
   return {
     isConnected,

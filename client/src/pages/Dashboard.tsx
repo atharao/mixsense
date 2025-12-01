@@ -193,7 +193,7 @@ const Dashboard: React.FC = () => {
                 </div>
                 <div className="text-right">
                   <p className="font-semibold">{item.usageCount}x</p>
-                  <p className="text-sm text-gray-500">{item.totalWeight.toFixed(2)}g</p>
+                  <p className="text-sm text-gray-500">{Number(item.totalWeight).toFixed(2)}g</p>
                 </div>
               </div>
             ))}
@@ -209,9 +209,9 @@ const Dashboard: React.FC = () => {
                 <div className="flex items-center justify-between mb-2">
                   <p className="font-medium">{op.username}</p>
                   <span
-                    className={`badge ${op.completionRate >= 90 ? 'badge-success' : op.completionRate >= 70 ? 'badge-warning' : 'badge-danger'}`}
+                    className={`badge ${Number(op.completionRate) >= 90 ? 'badge-success' : Number(op.completionRate) >= 70 ? 'badge-warning' : 'badge-danger'}`}
                   >
-                    {op.completionRate.toFixed(1)}%
+                    {Number(op.completionRate).toFixed(1)}%
                   </span>
                 </div>
                 <div className="flex gap-4 text-sm text-gray-600">
@@ -261,9 +261,9 @@ const Dashboard: React.FC = () => {
                       {alert.material}
                       <span className="text-xs text-gray-500 block">{alert.materialCode}</span>
                     </td>
-                    <td>{alert.setpoint.toFixed(2)}g</td>
+                    <td>{Number(alert.setpoint).toFixed(2)}g</td>
                     <td className="text-danger-600 font-semibold">
-                      {alert.actualWeight.toFixed(2)}g
+                      {Number(alert.actualWeight).toFixed(2)}g
                     </td>
                     <td>
                       <span className="badge-danger">{alert.deviation}%</span>
