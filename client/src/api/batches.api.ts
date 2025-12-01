@@ -27,4 +27,6 @@ export const batchesApi = {
     post<BatchLog>(`/batches/process/${batchId}/log-step`, data),
 
   completeProcess: (batchId: number) => put<Batch>(`/batches/process/${batchId}/complete`, {}),
+
+  abortProcess: (batchId: number) => put<Batch>(`/batches/process/${batchId}/abort`, {}),
 };

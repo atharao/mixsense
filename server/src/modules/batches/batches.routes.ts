@@ -50,6 +50,12 @@ router.post('/process/:id/log-step', batchesController.logProcessStep.bind(batch
 router.put('/process/:id/complete', batchesController.completeProcessBatch.bind(batchesController));
 
 /**
+ * PUT /api/batches/process/:id/abort
+ * Abort a process batch
+ */
+router.put('/process/:id/abort', batchesController.abortProcessBatch.bind(batchesController));
+
+/**
  * GET /api/batches
  * Get all batches with optional filters
  */

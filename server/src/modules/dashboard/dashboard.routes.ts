@@ -15,12 +15,6 @@ router.use(authenticate);
 router.get('/overview', dashboardController.getOverview.bind(dashboardController));
 
 /**
- * GET /api/dashboard/equipment
- * Get equipment status
- */
-router.get('/equipment', dashboardController.getEquipmentStatus.bind(dashboardController));
-
-/**
  * GET /api/dashboard/trends
  * Get batch completion trends
  */

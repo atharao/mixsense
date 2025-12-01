@@ -96,7 +96,7 @@ export class BatchesController {
    */
   async startBatch(req: Request, res: Response) {
     try {
-      const { recipeId, equipmentId } = req.body;
+      const { recipeId } = req.body;
       const operatorId = req.user!.userId; // From auth middleware
 
       // Validation
@@ -120,7 +120,6 @@ export class BatchesController {
       const batch = await batchesService.startBatch({
         recipeId: parseInt(recipeId, 10),
         operatorId,
-        equipmentId: equipmentId ? parseInt(equipmentId, 10) : undefined,
       });
 
       return res.status(201).json({
@@ -361,7 +360,7 @@ export class BatchesController {
    */
   async startProcessBatch(req: Request, res: Response) {
     try {
-      const { recipeId, equipmentId } = req.body;
+      const { recipeId } = req.body;
       const operatorId = req.user!.userId;
 
       if (!recipeId) {
@@ -374,7 +373,6 @@ export class BatchesController {
       const batch = await batchesService.startProcessBatch({
         recipeId: parseInt(recipeId, 10),
         operatorId,
-        equipmentId: equipmentId ? parseInt(equipmentId, 10) : undefined,
       });
 
       return res.status(201).json({
@@ -563,6 +561,53 @@ export class BatchesController {
       return res.status(500).json({
         success: false,
         message: 'Failed to fetch processed batches',
+        error: error.message,
+      });
+    }
+  }
+
+  /**
+   * PUT /api/batches/process/:id/abort
+   * Abort a process batch
+   */
+  async abortProcessBatch(req: Request, res: Response) {
+    try {
+      const batchId = parseInt(req.params.id, 10);
+
+      if (isNaN(batchId)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid batch ID',
+        });
+      }
+
+      const batch = await batchesService.abortProcessBatch(batchId);
+
+      return res.json({
+        success: true,
+        data: batch,
+        message: 'Process batch aborted successfully',
+      });
+    } catch (error: any) {
+      logger.error(`Error aborting process batch ${req.params.id}:`, error);
+
+      if (error.message === 'Batch not found') {
+        return res.status(404).json({
+          success: false,
+          message: error.message,
+        });
+      }
+
+      if (error.message.includes('Only IN_PROGRESS batches can be aborted')) {
+        return res.status(400).json({
+          success: false,
+          message: error.message,
+        });
+      }
+
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to abort process batch',
         error: error.message,
       });
     }

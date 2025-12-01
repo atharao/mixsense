@@ -68,7 +68,6 @@ export class ReportsService {
             steps: {
               include: {
                 material: true,
-                equipment: true,
               },
               orderBy: {
                 stepOrder: 'asc',
@@ -83,13 +82,12 @@ export class ReportsService {
             role: true,
           },
         },
-        equipment: true,
+
         logs: {
           include: {
             step: {
               include: {
                 material: true,
-                equipment: true,
               },
             },
             material: true,
@@ -119,7 +117,6 @@ export class ReportsService {
             steps: {
               include: {
                 material: true,
-                equipment: true,
               },
               orderBy: {
                 stepOrder: 'asc',
@@ -134,13 +131,12 @@ export class ReportsService {
             role: true,
           },
         },
-        equipment: true,
+
         logs: {
           include: {
             step: {
               include: {
                 material: true,
-                equipment: true,
               },
             },
             material: true,
@@ -172,9 +168,6 @@ export class ReportsService {
     if (batch.endTime) {
       doc.text(`Completed: ${batch.endTime.toLocaleString()}`, 14, 70);
     }
-    if (batch.equipment) {
-      doc.text(`Equipment: ${batch.equipment.name}`, 14, 77);
-    }
 
     // Batch logs table
     const tableData = batch.logs.map(log => [
@@ -189,7 +182,7 @@ export class ReportsService {
     ]);
 
     autoTable(doc, {
-      startY: batch.equipment ? 85 : 78,
+      startY: 78,
       head: [
         [
           'Step',

@@ -25,7 +25,6 @@ export class RecipesService {
         steps: {
           include: {
             material: true,
-            equipment: true,
           },
           orderBy: {
             stepOrder: 'asc',
@@ -50,7 +49,6 @@ export class RecipesService {
         steps: {
           include: {
             material: true,
-            equipment: true,
           },
           orderBy: {
             stepOrder: 'asc',
@@ -74,7 +72,7 @@ export class RecipesService {
     createdByUserId: number;
     steps: Array<{
       materialId: number;
-      equipmentId?: number;
+
       stepOrder: number;
       setpoint: number;
       tolerancePercent: number;
@@ -93,25 +91,6 @@ export class RecipesService {
       throw new Error('One or more materials not found');
     }
 
-    // Validate equipment if provided
-    const equipmentIds = data.steps
-      .map(s => s.equipmentId)
-      .filter((id): id is number => id !== undefined);
-
-    if (equipmentIds.length > 0) {
-      const uniqueEquipmentIds = [...new Set(equipmentIds)];
-      const equipment = await prisma.material.findMany({
-        where: {
-          id: { in: uniqueEquipmentIds },
-          type: 'EQUIPMENT',
-        },
-      });
-
-      if (equipment.length !== uniqueEquipmentIds.length) {
-        throw new Error('One or more equipment not found or not of type EQUIPMENT');
-      }
-    }
-
     // Create recipe with steps in a transaction
     const recipe = await prisma.recipe.create({
       data: {
@@ -120,7 +99,7 @@ export class RecipesService {
         steps: {
           create: data.steps.map(step => ({
             materialId: step.materialId,
-            equipmentId: step.equipmentId,
+
             stepOrder: step.stepOrder,
             setpoint: step.setpoint,
             tolerancePercent: step.tolerancePercent,
@@ -131,7 +110,6 @@ export class RecipesService {
         steps: {
           include: {
             material: true,
-            equipment: true,
           },
           orderBy: {
             stepOrder: 'asc',
@@ -153,7 +131,7 @@ export class RecipesService {
       steps?: Array<{
         id?: number;
         materialId: number;
-        equipmentId?: number;
+
         stepOrder: number;
         setpoint: number;
         tolerancePercent: number;
@@ -183,25 +161,6 @@ export class RecipesService {
       if (materials.length !== uniqueMaterialIds.length) {
         throw new Error('One or more materials not found');
       }
-
-      // Validate equipment if provided
-      const equipmentIds = data.steps
-        .map(s => s.equipmentId)
-        .filter((id): id is number => id !== undefined);
-
-      if (equipmentIds.length > 0) {
-        const uniqueEquipmentIds = [...new Set(equipmentIds)];
-        const equipment = await prisma.material.findMany({
-          where: {
-            id: { in: uniqueEquipmentIds },
-            type: 'EQUIPMENT',
-          },
-        });
-
-        if (equipment.length !== uniqueEquipmentIds.length) {
-          throw new Error('One or more equipment not found or not of type EQUIPMENT');
-        }
-      }
     }
 
     // Update recipe in a transaction
@@ -226,7 +185,7 @@ export class RecipesService {
           data: data.steps.map(step => ({
             recipeId: id,
             materialId: step.materialId,
-            equipmentId: step.equipmentId,
+
             stepOrder: step.stepOrder,
             setpoint: step.setpoint,
             tolerancePercent: step.tolerancePercent,
@@ -241,7 +200,6 @@ export class RecipesService {
           steps: {
             include: {
               material: true,
-              equipment: true,
             },
             orderBy: {
               stepOrder: 'asc',

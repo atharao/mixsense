@@ -28,28 +28,6 @@ export class DashboardController {
   }
 
   /**
-   * GET /api/dashboard/equipment
-   * Get equipment status
-   */
-  async getEquipmentStatus(_req: Request, res: Response) {
-    try {
-      const equipmentStatus = await dashboardService.getEquipmentStatus();
-
-      return res.json({
-        success: true,
-        data: equipmentStatus,
-      });
-    } catch (error: any) {
-      logger.error('Error fetching equipment status:', error);
-      return res.status(500).json({
-        success: false,
-        message: 'Failed to fetch equipment status',
-        error: error.message,
-      });
-    }
-  }
-
-  /**
    * GET /api/dashboard/trends
    * Get batch completion trends
    */

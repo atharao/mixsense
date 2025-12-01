@@ -16,6 +16,7 @@ interface ProcessRecipeState {
   completedSteps: number[];
   isProcessing: boolean;
   currentQRCode: string | null;
+  currentQRData: string | null; // QR data string for printing
   frozenWeight: number | null; // Frozen weight value for QR code display
 }
 
@@ -33,6 +34,7 @@ const ProcessRecipe: React.FC = () => {
     completedSteps: [],
     isProcessing: false,
     currentQRCode: null,
+    currentQRData: null,
     frozenWeight: null,
   });
 
@@ -84,6 +86,7 @@ const ProcessRecipe: React.FC = () => {
         completedSteps: [],
         isProcessing: false,
         currentQRCode: null,
+        currentQRData: null,
         frozenWeight: null,
       });
 
@@ -140,7 +143,6 @@ const ProcessRecipe: React.FC = () => {
     try {
       // Freeze the current weight value for QR code generation
       const frozenWeightValue = currentWeight;
-      setProcessRecipe(prev => ({ ...prev, isProcessing: true, frozenWeight: frozenWeightValue }));
 
       // Format QR data with essential information using frozen weight
       const qrData = formatQRData({
@@ -153,61 +155,70 @@ const ProcessRecipe: React.FC = () => {
 
       // Generate QR code image for display
       const qrCodeImage = await generateQRCodeImage(qrData);
-      setProcessRecipe(prev => ({ ...prev, currentQRCode: qrCodeImage }));
 
-      // Print label via ZPL API - continue even if printer fails
-      try {
-        await printLabel({
-          materialName: currentStep.material!.name,
-          weight: frozenWeightValue,
-          qrData: qrData,
-        });
-        console.log('✓ Label printed successfully');
-      } catch (printerError: any) {
-        console.warn('⚠ Printer error (continuing anyway):', printerError.message);
-        // Continue to next step even if printer fails
-      }
-
-      // Move to next step after successful print
-      const newCompletedSteps = [...processRecipe.completedSteps, processRecipe.currentStepIndex];
-      const nextStepIndex = processRecipe.currentStepIndex + 1;
-
-      // Wait a moment to show the QR code
-      setTimeout(() => {
-        setProcessRecipe({
-          ...processRecipe,
-          completedSteps: newCompletedSteps,
-          currentStepIndex: nextStepIndex,
-          isProcessing: false,
-          currentQRCode: null,
-          frozenWeight: null,
-        });
-
-        // Check if all steps are completed
-        if (nextStepIndex >= (processRecipe.currentRecipe?.steps?.length || 0)) {
-          alert('All steps completed! You can now use these packets in Process Batch.');
-          // Disconnect WebSocket when process is complete
-          disconnect();
-          // Reset to recipe selection
-          setProcessRecipe({
-            currentRecipe: null,
-            currentStepIndex: 0,
-            completedSteps: [],
-            isProcessing: false,
-            currentQRCode: null,
-            frozenWeight: null,
-          });
-          setSelectedRecipeId(0);
-        }
-      }, 3000);
+      // Show popup with QR code - do NOT call printer yet
+      setProcessRecipe(prev => ({
+        ...prev,
+        currentQRCode: qrCodeImage,
+        currentQRData: qrData,
+        frozenWeight: frozenWeightValue,
+        isProcessing: false,
+      }));
     } catch (error: any) {
-      alert(error.message || 'Failed to process step');
+      alert(error.message || 'Failed to generate QR code');
       setProcessRecipe(prev => ({
         ...prev,
         isProcessing: false,
         currentQRCode: null,
         frozenWeight: null,
       }));
+    }
+  };
+
+  const handlePrintLabel = async (qrData: string) => {
+    const currentStep = processRecipe.currentRecipe?.steps?.[processRecipe.currentStepIndex];
+    if (!currentStep || processRecipe.frozenWeight === null) {
+      throw new Error('Missing step or weight data');
+    }
+
+    await printLabel({
+      materialName: currentStep.material!.name,
+      weight: processRecipe.frozenWeight,
+      qrData: qrData,
+    });
+  };
+
+  const handleProceed = () => {
+    // Move to next step after user clicks Proceed
+    const newCompletedSteps = [...processRecipe.completedSteps, processRecipe.currentStepIndex];
+    const nextStepIndex = processRecipe.currentStepIndex + 1;
+
+    setProcessRecipe({
+      ...processRecipe,
+      completedSteps: newCompletedSteps,
+      currentStepIndex: nextStepIndex,
+      isProcessing: false,
+      currentQRCode: null,
+      currentQRData: null,
+      frozenWeight: null,
+    });
+
+    // Check if all steps are completed
+    if (nextStepIndex >= (processRecipe.currentRecipe?.steps?.length || 0)) {
+      alert('All steps completed! You can now use these packets in Process Batch.');
+      // Disconnect WebSocket when process is complete
+      disconnect();
+      // Reset to recipe selection
+      setProcessRecipe({
+        currentRecipe: null,
+        currentStepIndex: 0,
+        completedSteps: [],
+        isProcessing: false,
+        currentQRCode: null,
+        currentQRData: null,
+        frozenWeight: null,
+      });
+      setSelectedRecipeId(0);
     }
   };
 
@@ -227,16 +238,18 @@ const ProcessRecipe: React.FC = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">Process Recipe</h1>
-      <p className="text-gray-600 mb-6">
-        Fill raw materials into packets, print barcodes, and stick them on packets for later use in
-        Process Batch.
-      </p>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold">Process Recipe</h2>
+        <p className="text-gray-500">
+          Fill raw materials into packets, print barcodes, and stick them on packets for later use
+          in Process Batch.
+        </p>
+      </div>
 
       {/* WebSocket Connection Status - Only show when recipe is selected */}
       {processRecipe.currentRecipe && (
-        <div className="mb-6 bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold mb-4">Weight Monitor</h2>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
@@ -275,7 +288,7 @@ const ProcessRecipe: React.FC = () => {
 
       {/* Recipe Selection */}
       {!processRecipe.currentRecipe && (
-        <div className="bg-white rounded-lg shadow p-6 mb-96">
+        <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold mb-4">Start Process Recipe</h2>
 
           <div className="mb-4">
@@ -440,7 +453,7 @@ const ProcessRecipe: React.FC = () => {
                   }
                   className="w-full py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 font-semibold text-lg"
                 >
-                  {processRecipe.isProcessing ? 'Processing & Printing Label...' : 'NEXT ➔'}
+                  NEXT ➔
                 </button>
               </div>
             )}
@@ -448,12 +461,14 @@ const ProcessRecipe: React.FC = () => {
       )}
 
       {/* ZPL Barcode Popup */}
-      {processRecipe.currentQRCode && currentStep && (
+      {processRecipe.currentQRCode && processRecipe.currentQRData && currentStep && (
         <ZplBarcodePopup
           qrCodeImage={processRecipe.currentQRCode}
           materialName={currentStep.material?.name || 'Unknown'}
           weight={processRecipe.frozenWeight || 0}
-          onClose={() => {}}
+          qrData={processRecipe.currentQRData}
+          onPrint={handlePrintLabel}
+          onProceed={handleProceed}
         />
       )}
     </div>

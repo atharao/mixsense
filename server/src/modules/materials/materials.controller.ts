@@ -1,23 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
 import { MaterialsService } from './materials.service';
-import { MaterialType } from '@prisma/client';
 
 const materialsService = new MaterialsService();
 
 export const listMaterials = async (
-  req: Request,
+  _req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const { type } = req.query;
-
-    const validType =
-      type && ['INGREDIENT', 'EQUIPMENT'].includes(type as string)
-        ? (type as MaterialType)
-        : undefined;
-
-    const materials = await materialsService.getAllMaterials(validType);
+    const materials = await materialsService.getAllMaterials();
 
     res.status(200).json({
       success: true,
@@ -70,20 +62,12 @@ export const createMaterial = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const { name, code, type } = req.body;
+    const { name, code } = req.body;
 
-    if (!name || !code || !type) {
+    if (!name || !code) {
       res.status(400).json({
         success: false,
-        message: 'Name, code, and type are required',
-      });
-      return;
-    }
-
-    if (!['INGREDIENT', 'EQUIPMENT'].includes(type)) {
-      res.status(400).json({
-        success: false,
-        message: 'Type must be either INGREDIENT or EQUIPMENT',
+        message: 'Name and code are required',
       });
       return;
     }
@@ -99,7 +83,6 @@ export const createMaterial = async (
     const material = await materialsService.createMaterial({
       name,
       code,
-      type,
       createdByUserId: req.user.userId,
     });
 
@@ -130,20 +113,11 @@ export const updateMaterial = async (
       return;
     }
 
-    const { name, code, type } = req.body;
-
-    if (type && !['INGREDIENT', 'EQUIPMENT'].includes(type)) {
-      res.status(400).json({
-        success: false,
-        message: 'Type must be either INGREDIENT or EQUIPMENT',
-      });
-      return;
-    }
+    const { name, code } = req.body;
 
     const material = await materialsService.updateMaterial(materialId, {
       name,
       code,
-      type,
     });
 
     res.status(200).json({
@@ -231,42 +205,6 @@ export const getMaterialByCode = async (
     res.status(200).json({
       success: true,
       data: material,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const getIngredients = async (
-  _req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> => {
-  try {
-    const ingredients = await materialsService.getIngredients();
-
-    res.status(200).json({
-      success: true,
-      data: ingredients,
-      count: ingredients.length,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const getEquipment = async (
-  _req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> => {
-  try {
-    const equipment = await materialsService.getEquipment();
-
-    res.status(200).json({
-      success: true,
-      data: equipment,
-      count: equipment.length,
     });
   } catch (error) {
     next(error);

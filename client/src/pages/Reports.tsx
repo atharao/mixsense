@@ -283,10 +283,6 @@ const Reports: React.FC = () => {
                     {selectedBatch.endTime ? new Date(selectedBatch.endTime).toLocaleString() : '-'}
                   </p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-500">Equipment</p>
-                  <p className="font-semibold">{selectedBatch.equipment?.name || 'N/A'}</p>
-                </div>
               </div>
 
               {/* Batch Logs */}

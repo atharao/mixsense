@@ -41,13 +41,11 @@ export interface ChangePasswordRequest {
 export interface CreateMaterialRequest {
   name: string;
   code: string;
-  type: 'INGREDIENT' | 'EQUIPMENT';
 }
 
 export interface UpdateMaterialRequest {
   name?: string;
   code?: string;
-  type?: 'INGREDIENT' | 'EQUIPMENT';
 }
 
 // Recipe API types
@@ -55,7 +53,6 @@ export interface CreateRecipeRequest {
   name: string;
   steps: Array<{
     materialId: number;
-    equipmentId?: number;
     stepOrder: number;
     setpoint: number;
     tolerancePercent: number;
@@ -67,7 +64,6 @@ export interface UpdateRecipeRequest {
   steps?: Array<{
     id?: number;
     materialId: number;
-    equipmentId?: number;
     stepOrder: number;
     setpoint: number;
     tolerancePercent: number;
@@ -77,7 +73,6 @@ export interface UpdateRecipeRequest {
 // Batch API types
 export interface StartBatchRequest {
   recipeId: number;
-  equipmentId?: number;
 }
 
 export interface LogStepRequest {
@@ -108,7 +103,6 @@ export interface GenerateQRRequest {
   setpoint: number;
   actualValue: number;
   materialName: string;
-  equipment: string;
 }
 
 export interface ValidateQRRequest {

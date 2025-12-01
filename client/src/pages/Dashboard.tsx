@@ -13,7 +13,6 @@ import { dashboardApi } from '../api/dashboard.api';
 
 const Dashboard: React.FC = () => {
   const [overview, setOverview] = useState<any>(null);
-  const [equipment, setEquipment] = useState<any[]>([]);
   const [trends, setTrends] = useState<any[]>([]);
   const [materialUsage, setMaterialUsage] = useState<any[]>([]);
   const [operators, setOperators] = useState<any[]>([]);
@@ -28,18 +27,17 @@ const Dashboard: React.FC = () => {
 
   const loadDashboardData = async () => {
     try {
-      const [overviewRes, equipmentRes, trendsRes, materialUsageRes, operatorsRes, alertsRes] =
-        await Promise.all([
+      const [overviewRes, trendsRes, materialUsageRes, operatorsRes, alertsRes] = await Promise.all(
+        [
           dashboardApi.getOverview(),
-          dashboardApi.getEquipmentStatus(),
           dashboardApi.getTrends(30),
           dashboardApi.getMaterialUsage(10),
           dashboardApi.getOperatorPerformance(),
           dashboardApi.getAlerts(10),
-        ]);
+        ],
+      );
 
       setOverview(overviewRes.data.data);
-      setEquipment(equipmentRes.data.data);
       setTrends(trendsRes.data.data);
       setMaterialUsage(materialUsageRes.data.data);
       setOperators(operatorsRes.data.data);
@@ -119,65 +117,33 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Batch Trends Chart */}
-        <div className="card">
-          <h3 className="text-lg font-semibold mb-4">Batch Completion Trends (30 Days)</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={trends}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line
-                type="monotone"
-                dataKey="completed"
-                stroke="#22c55e"
-                name="Completed"
-                strokeWidth={2}
-              />
-              <Line
-                type="monotone"
-                dataKey="aborted"
-                stroke="#ef4444"
-                name="Aborted"
-                strokeWidth={2}
-              />
-              <Line type="monotone" dataKey="total" stroke="#0ea5e9" name="Total" strokeWidth={2} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Equipment Status */}
-        <div className="card">
-          <h3 className="text-lg font-semibold mb-4">Equipment Status</h3>
-          <div className="space-y-3 max-h-[300px] overflow-y-auto scrollbar-thin">
-            {equipment.map(eq => (
-              <div
-                key={eq.id}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-              >
-                <div className="flex-1">
-                  <p className="font-medium">{eq.name}</p>
-                  <p className="text-sm text-gray-500">{eq.code}</p>
-                  {eq.currentBatch && (
-                    <p className="text-xs text-primary-600 mt-1">
-                      Batch #{eq.currentBatch.id} - {eq.currentBatch.recipe}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  {eq.status === 'IN_USE' ? (
-                    <span className="badge-warning">In Use</span>
-                  ) : (
-                    <span className="badge-success">Available</span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* Batch Trends Chart */}
+      <div className="card">
+        <h3 className="text-lg font-semibold mb-4">Batch Completion Trends (30 Days)</h3>
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={trends}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            <Line
+              type="monotone"
+              dataKey="completed"
+              stroke="#22c55e"
+              name="Completed"
+              strokeWidth={2}
+            />
+            <Line
+              type="monotone"
+              dataKey="aborted"
+              stroke="#ef4444"
+              name="Aborted"
+              strokeWidth={2}
+            />
+            <Line type="monotone" dataKey="total" stroke="#0ea5e9" name="Total" strokeWidth={2} />
+          </LineChart>
+        </ResponsiveContainer>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -280,7 +246,7 @@ const Dashboard: React.FC = () => {
       )}
 
       {/* Resource Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="card text-center">
           <p className="text-sm text-gray-500 mb-2">Total Recipes</p>
           <p className="text-4xl font-bold text-primary-600">{overview?.totalRecipes || 0}</p>
@@ -288,10 +254,6 @@ const Dashboard: React.FC = () => {
         <div className="card text-center">
           <p className="text-sm text-gray-500 mb-2">Total Materials</p>
           <p className="text-4xl font-bold text-success-600">{overview?.totalMaterials || 0}</p>
-        </div>
-        <div className="card text-center">
-          <p className="text-sm text-gray-500 mb-2">Equipment Items</p>
-          <p className="text-4xl font-bold text-warning-600">{overview?.totalEquipment || 0}</p>
         </div>
       </div>
     </div>

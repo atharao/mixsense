@@ -1,26 +1,20 @@
 import { prisma } from '../../config/db';
-import { MaterialType } from '@prisma/client';
 import { logger } from '../../utils/logger';
 
 export interface CreateMaterialData {
   name: string;
   code: string;
-  type: MaterialType;
   createdByUserId: number;
 }
 
 export interface UpdateMaterialData {
   name?: string;
   code?: string;
-  type?: MaterialType;
 }
 
 export class MaterialsService {
-  async getAllMaterials(type?: MaterialType) {
-    const where = type ? { type } : {};
-
+  async getAllMaterials() {
     const materials = await prisma.material.findMany({
-      where,
       include: {
         createdBy: {
           select: {
@@ -105,22 +99,11 @@ export class MaterialsService {
 
     // Check if material is used in any recipe steps
     const usedInSteps = await prisma.recipeStep.count({
-      where: {
-        OR: [{ materialId: id }, { equipmentId: id }],
-      },
+      where: { materialId: id },
     });
 
     if (usedInSteps > 0) {
       throw new Error('Cannot delete material as it is used in recipe steps');
-    }
-
-    // Check if material is used in any batches
-    const usedInBatches = await prisma.batch.count({
-      where: { equipmentId: id },
-    });
-
-    if (usedInBatches > 0) {
-      throw new Error('Cannot delete material as it is used in batches');
     }
 
     await prisma.material.delete({
@@ -146,13 +129,5 @@ export class MaterialsService {
     });
 
     return material;
-  }
-
-  async getIngredients() {
-    return this.getAllMaterials('INGREDIENT');
-  }
-
-  async getEquipment() {
-    return this.getAllMaterials('EQUIPMENT');
   }
 }

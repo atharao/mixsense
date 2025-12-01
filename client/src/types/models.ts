@@ -9,13 +9,10 @@ export interface User {
 }
 
 // Material types
-export type MaterialType = 'INGREDIENT' | 'EQUIPMENT';
-
 export interface Material {
   id: number;
   name: string;
   code: string;
-  type: MaterialType;
   createdByUserId: number;
   createdAt: string;
   createdBy?: {
@@ -42,12 +39,10 @@ export interface RecipeStep {
   id: number;
   recipeId: number;
   materialId: number;
-  equipmentId?: number | null;
   stepOrder: number;
   setpoint: number;
   tolerancePercent: number;
   material?: Material;
-  equipment?: Material;
 }
 
 // Batch types
@@ -57,13 +52,11 @@ export interface Batch {
   id: number;
   recipeId: number;
   operatorUserId: number;
-  equipmentId?: number | null;
   startTime: string;
   endTime?: string | null;
   status: BatchStatus;
   recipe?: Recipe;
   operator?: User;
-  equipment?: Material;
   logs?: BatchLog[];
 }
 
@@ -82,16 +75,14 @@ export interface BatchLog {
 }
 
 // Dashboard types
-export interface EquipmentStatus {
-  equipmentId: number;
-  equipmentName: string;
-  status: 'IDLE' | 'IN_USE';
-  batchId?: number | null;
-}
-
 export interface DashboardData {
   activeBatchCount: number;
-  equipmentStatus: EquipmentStatus[];
+  todayBatches: number;
+  weekBatches: number;
+  monthBatches: number;
+  totalRecipes: number;
+  totalMaterials: number;
+  recentBatches: Batch[];
 }
 
 // QR types
@@ -100,7 +91,6 @@ export interface QRData {
   setpoint: number;
   actualValue: number;
   materialName: string;
-  equipment: string;
 }
 
 export interface ParsedQRData {
@@ -108,5 +98,4 @@ export interface ParsedQRData {
   setpoint: string;
   actualValue: string;
   materialName: string;
-  equipment: string;
 }

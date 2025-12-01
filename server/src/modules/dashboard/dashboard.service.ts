@@ -17,7 +17,6 @@ export class DashboardService {
       monthBatches,
       totalRecipes,
       totalMaterials,
-      totalEquipment,
       recentBatches,
     ] = await Promise.all([
       // Active batches
@@ -50,14 +49,7 @@ export class DashboardService {
       prisma.recipe.count(),
 
       // Total materials
-      prisma.material.count({
-        where: { type: 'INGREDIENT' },
-      }),
-
-      // Total equipment
-      prisma.material.count({
-        where: { type: 'EQUIPMENT' },
-      }),
+      prisma.material.count(),
 
       // Recent 5 batches
       prisma.batch.findMany({
@@ -71,7 +63,6 @@ export class DashboardService {
               username: true,
             },
           },
-          equipment: true,
         },
       }),
     ]);
@@ -83,64 +74,8 @@ export class DashboardService {
       monthBatches,
       totalRecipes,
       totalMaterials,
-      totalEquipment,
       recentBatches,
     };
-  }
-
-  /**
-   * Get equipment status
-   */
-  async getEquipmentStatus() {
-    const equipment = await prisma.material.findMany({
-      where: { type: 'EQUIPMENT' },
-      include: {
-        _count: {
-          select: {
-            batches: true,
-          },
-        },
-      },
-    });
-
-    // Get active batches using each equipment
-    const equipmentWithStatus = await Promise.all(
-      equipment.map(async eq => {
-        const activeBatch = await prisma.batch.findFirst({
-          where: {
-            equipmentId: eq.id,
-            status: 'IN_PROGRESS',
-          },
-          include: {
-            recipe: true,
-            operator: {
-              select: {
-                id: true,
-                username: true,
-              },
-            },
-          },
-        });
-
-        return {
-          id: eq.id,
-          name: eq.name,
-          code: eq.code,
-          status: activeBatch ? 'IN_USE' : 'AVAILABLE',
-          totalUsage: eq._count.batches,
-          currentBatch: activeBatch
-            ? {
-                id: activeBatch.id,
-                recipe: activeBatch.recipe.name,
-                operator: activeBatch.operator.username,
-                startedAt: activeBatch.startTime,
-              }
-            : null,
-        };
-      }),
-    );
-
-    return equipmentWithStatus;
   }
 
   /**
@@ -226,7 +161,6 @@ export class DashboardService {
             id: true,
             name: true,
             code: true,
-            type: true,
           },
         });
 

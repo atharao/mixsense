@@ -13,19 +13,15 @@ import { Material } from '../types/models';
 
 const Materials: React.FC = () => {
   const dispatch = useDispatch();
-  const { materials, ingredients, equipment, loading } = useSelector(
-    (state: RootState) => state.materials,
-  );
+  const { materials, loading } = useSelector((state: RootState) => state.materials);
 
   const [showModal, setShowModal] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
-  const [filter, setFilter] = useState<'ALL' | 'INGREDIENT' | 'EQUIPMENT'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
   const [formData, setFormData] = useState({
     name: '',
     code: '',
-    type: 'INGREDIENT' as 'INGREDIENT' | 'EQUIPMENT',
   });
 
   useEffect(() => {
@@ -48,14 +44,12 @@ const Materials: React.FC = () => {
       setFormData({
         name: material.name,
         code: material.code,
-        type: material.type,
       });
     } else {
       setEditingMaterial(null);
       setFormData({
         name: '',
         code: '',
-        type: 'INGREDIENT',
       });
     }
     setShowModal(true);
@@ -64,7 +58,7 @@ const Materials: React.FC = () => {
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingMaterial(null);
-    setFormData({ name: '', code: '', type: 'INGREDIENT' });
+    setFormData({ name: '', code: '' });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -97,47 +91,34 @@ const Materials: React.FC = () => {
     }
   };
 
-  const filteredMaterials = materials
-    .filter(m => {
-      if (filter === 'ALL') return true;
-      return m.type === filter;
-    })
-    .filter(
-      m =>
-        m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        m.code.toLowerCase().includes(searchQuery.toLowerCase()),
-    );
+  const filteredMaterials = materials.filter(
+    m =>
+      m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      m.code.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Materials & Equipment</h2>
-          <p className="text-gray-500">Manage ingredients and equipment</p>
+          <h2 className="text-2xl font-bold">Materials</h2>
+          <p className="text-gray-500">Manage materials for recipes</p>
         </div>
         <button onClick={() => handleOpenModal()} className="btn-primary">
           + Add Material
         </button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Stats Card */}
+      <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
         <div className="card">
           <p className="text-sm text-gray-500">Total Materials</p>
           <p className="text-3xl font-bold text-primary-600">{materials.length}</p>
         </div>
-        <div className="card">
-          <p className="text-sm text-gray-500">Ingredients</p>
-          <p className="text-3xl font-bold text-success-600">{ingredients.length}</p>
-        </div>
-        <div className="card">
-          <p className="text-sm text-gray-500">Equipment</p>
-          <p className="text-3xl font-bold text-warning-600">{equipment.length}</p>
-        </div>
       </div>
 
-      {/* Filters */}
+      {/* Search */}
       <div className="card">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
@@ -148,38 +129,6 @@ const Materials: React.FC = () => {
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
             />
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setFilter('ALL')}
-              className={`px-4 py-2 rounded-md font-medium transition-colors ${
-                filter === 'ALL'
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              All ({materials.length})
-            </button>
-            <button
-              onClick={() => setFilter('INGREDIENT')}
-              className={`px-4 py-2 rounded-md font-medium transition-colors ${
-                filter === 'INGREDIENT'
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              Ingredients ({ingredients.length})
-            </button>
-            <button
-              onClick={() => setFilter('EQUIPMENT')}
-              className={`px-4 py-2 rounded-md font-medium transition-colors ${
-                filter === 'EQUIPMENT'
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              Equipment ({equipment.length})
-            </button>
           </div>
         </div>
       </div>
@@ -205,7 +154,6 @@ const Materials: React.FC = () => {
                 <tr>
                   <th>Code</th>
                   <th>Name</th>
-                  <th>Type</th>
                   <th>Created</th>
                   <th>Actions</th>
                 </tr>
@@ -215,13 +163,6 @@ const Materials: React.FC = () => {
                   <tr key={material.id}>
                     <td className="font-mono font-semibold">{material.code}</td>
                     <td>{material.name}</td>
-                    <td>
-                      {material.type === 'INGREDIENT' ? (
-                        <span className="badge-success">Ingredient</span>
-                      ) : (
-                        <span className="badge-info">Equipment</span>
-                      )}
-                    </td>
                     <td className="text-sm text-gray-500">
                       {new Date(material.createdAt).toLocaleDateString()}
                     </td>
@@ -285,24 +226,6 @@ const Materials: React.FC = () => {
                     required
                     placeholder="e.g., Flour"
                   />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Type *</label>
-                  <select
-                    className="input"
-                    value={formData.type}
-                    onChange={e =>
-                      setFormData({
-                        ...formData,
-                        type: e.target.value as 'INGREDIENT' | 'EQUIPMENT',
-                      })
-                    }
-                    required
-                  >
-                    <option value="INGREDIENT">Ingredient</option>
-                    <option value="EQUIPMENT">Equipment</option>
-                  </select>
                 </div>
 
                 <div className="flex justify-end gap-3 mt-6">

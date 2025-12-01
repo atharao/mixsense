@@ -16,7 +16,6 @@ import { Recipe } from '../types/models';
 
 interface StepForm {
   materialId: number;
-  equipmentId?: number;
   stepOrder: number;
   setpoint: number;
   tolerancePercent: number;
@@ -29,7 +28,7 @@ const Recipes: React.FC = () => {
     selectedRecipe,
     loading: _loading,
   } = useSelector((state: RootState) => state.recipes);
-  const { ingredients, equipment } = useSelector((state: RootState) => state.materials);
+  const { materials } = useSelector((state: RootState) => state.materials);
   const { user } = useSelector((state: RootState) => state.auth);
 
   const isAdmin = user?.role === 'ADMIN';
@@ -85,7 +84,6 @@ const Recipes: React.FC = () => {
       setSteps(
         recipe.steps?.map(step => ({
           materialId: step.materialId,
-          equipmentId: step.equipmentId || undefined,
           stepOrder: step.stepOrder,
           setpoint: step.setpoint,
           tolerancePercent: step.tolerancePercent,
@@ -97,7 +95,6 @@ const Recipes: React.FC = () => {
       setSteps([
         {
           materialId: 0,
-          equipmentId: undefined,
           stepOrder: 1,
           setpoint: 0,
           tolerancePercent: 5,
@@ -119,7 +116,6 @@ const Recipes: React.FC = () => {
       ...steps,
       {
         materialId: 0,
-        equipmentId: undefined,
         stepOrder: steps.length + 1,
         setpoint: 0,
         tolerancePercent: 5,
@@ -194,7 +190,6 @@ const Recipes: React.FC = () => {
         name: recipeName,
         steps: steps.map(step => ({
           materialId: step.materialId,
-          equipmentId: step.equipmentId || undefined,
           stepOrder: step.stepOrder,
           setpoint: step.setpoint,
           tolerancePercent: step.tolerancePercent,
@@ -378,12 +373,6 @@ const Recipes: React.FC = () => {
                               g)
                             </span>
                           </p>
-                          {step.equipment && (
-                            <p className="text-sm">
-                              <span className="text-gray-500">Equipment:</span>{' '}
-                              <span className="font-semibold">{step.equipment.name}</span>
-                            </p>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -494,31 +483,9 @@ const Recipes: React.FC = () => {
                               required
                             >
                               <option value={0}>Select material...</option>
-                              {ingredients.map(mat => (
+                              {materials.map(mat => (
                                 <option key={mat.id} value={mat.id}>
                                   {mat.name} ({mat.code})
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          <div>
-                            <label className="block text-sm text-gray-600 mb-1">Equipment</label>
-                            <select
-                              className="input"
-                              value={step.equipmentId || ''}
-                              onChange={e =>
-                                handleUpdateStep(
-                                  index,
-                                  'equipmentId',
-                                  e.target.value ? parseInt(e.target.value) : undefined,
-                                )
-                              }
-                            >
-                              <option value="">None</option>
-                              {equipment.map(eq => (
-                                <option key={eq.id} value={eq.id}>
-                                  {eq.name} ({eq.code})
                                 </option>
                               ))}
                             </select>

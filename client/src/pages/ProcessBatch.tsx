@@ -24,6 +24,7 @@ const ProcessBatch: React.FC = () => {
   const [isStarting, setIsStarting] = useState(false);
   const [isProcessingStep, setIsProcessingStep] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
+  const [isAborting, setIsAborting] = useState(false);
 
   const [processBatch, setProcessBatch] = useState<ProcessBatchState>({
     activeBatch: null,
@@ -295,18 +296,55 @@ const ProcessBatch: React.FC = () => {
     }
   };
 
+  const handleAbortBatch = async () => {
+    if (!processBatch.activeBatch) return;
+
+    const confirmAbort = confirm(
+      `Are you sure you want to abort this batch?\n\nRecipe: ${processBatch.currentRecipe?.name}\nCompleted Steps: ${processBatch.completedSteps.length}/${processBatch.currentRecipe?.steps?.length || 0}\n\nThis action cannot be undone.`,
+    );
+
+    if (!confirmAbort) return;
+
+    try {
+      setIsAborting(true);
+      await batchesApi.abortProcess(processBatch.activeBatch.id);
+
+      alert('Batch aborted successfully.');
+
+      // Disconnect barcode scanner WebSocket when batch is aborted
+      console.log('🔴 ProcessBatch: Disconnecting barcode scanner - batch aborted');
+      disconnect();
+
+      // Reset state
+      setProcessBatch({
+        activeBatch: null,
+        currentRecipe: null,
+        currentStepIndex: 0,
+        completedSteps: [],
+      });
+      setSelectedRecipeId(0);
+
+      setIsAborting(false);
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Failed to abort batch');
+      setIsAborting(false);
+    }
+  };
+
   const currentStep = processBatch.currentRecipe?.steps?.[processBatch.currentStepIndex];
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">Process Batch</h1>
-      <p className="text-gray-600 mb-6">
-        Scan barcoded packets to log material usage into the system.
-      </p>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold">Process Batch</h2>
+        <p className="text-gray-500">
+          Scan barcoded packets to log material usage into the system.
+        </p>
+      </div>
 
       {/* Barcode Scanner Connection Status - Only show when batch is active */}
       {processBatch.activeBatch && (
-        <div className="mb-6 bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold mb-4">Barcode Scanner Monitor</h2>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
@@ -341,7 +379,7 @@ const ProcessBatch: React.FC = () => {
 
       {/* Recipe Selection */}
       {!processBatch.activeBatch && (
-        <div className="bg-white rounded-lg shadow p-6 mb-96">
+        <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold mb-4">Start Process Batch</h2>
 
           <div className="mb-4">
@@ -373,13 +411,24 @@ const ProcessBatch: React.FC = () => {
       {/* Active Process Batch */}
       {processBatch.activeBatch && processBatch.currentRecipe && (
         <div className="space-y-6">
-          {/* Recipe Info */}
+          {/* Recipe Info with Abort Button */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-2">{processBatch.currentRecipe.name}</h2>
-            <p className="text-gray-600">
-              Step {processBatch.currentStepIndex + 1} of{' '}
-              {processBatch.currentRecipe.steps?.length || 0}
-            </p>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex-1">
+                <h2 className="text-xl font-semibold mb-2">{processBatch.currentRecipe.name}</h2>
+                <p className="text-gray-600">
+                  Step {processBatch.currentStepIndex + 1} of{' '}
+                  {processBatch.currentRecipe.steps?.length || 0}
+                </p>
+              </div>
+              <button
+                onClick={handleAbortBatch}
+                disabled={isAborting || isCompleting}
+                className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:bg-gray-300 font-semibold transition-colors"
+              >
+                {isAborting ? 'Aborting...' : 'Abort Batch'}
+              </button>
+            </div>
           </div>
 
           {/* Step Progress Indicator */}

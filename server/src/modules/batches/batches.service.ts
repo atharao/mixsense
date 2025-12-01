@@ -2,9 +2,7 @@ import { BatchStatus, RecipeStep, Material } from '@prisma/client';
 import { prisma } from '../../config/db';
 
 // Helper function to transform recipe steps and convert Decimal to number
-function transformRecipeSteps(
-  steps: (RecipeStep & { material?: Material; equipment?: Material | null })[],
-) {
+function transformRecipeSteps(steps: (RecipeStep & { material?: Material })[]) {
   return steps.map(step => ({
     ...step,
     setpoint: Number(step.setpoint),
@@ -81,7 +79,6 @@ export class BatchesService {
             steps: {
               include: {
                 material: true,
-                equipment: true,
               },
             },
           },
@@ -93,13 +90,12 @@ export class BatchesService {
             role: true,
           },
         },
-        equipment: true,
+
         logs: {
           include: {
             step: {
               include: {
                 material: true,
-                equipment: true,
               },
             },
             material: true,
@@ -129,7 +125,6 @@ export class BatchesService {
             steps: {
               include: {
                 material: true,
-                equipment: true,
               },
               orderBy: {
                 stepOrder: 'asc',
@@ -144,13 +139,12 @@ export class BatchesService {
             role: true,
           },
         },
-        equipment: true,
+
         logs: {
           include: {
             step: {
               include: {
                 material: true,
-                equipment: true,
               },
             },
             material: true,
@@ -172,7 +166,7 @@ export class BatchesService {
   /**
    * Start a new batch
    */
-  async startBatch(data: { recipeId: number; operatorId: number; equipmentId?: number }) {
+  async startBatch(data: { recipeId: number; operatorId: number }) {
     // Validate recipe exists
     const recipe = await prisma.recipe.findUnique({
       where: { id: data.recipeId },
@@ -198,26 +192,11 @@ export class BatchesService {
       throw new Error('Operator not found');
     }
 
-    // Validate equipment if provided
-    if (data.equipmentId) {
-      const equipment = await prisma.material.findFirst({
-        where: {
-          id: data.equipmentId,
-          type: 'EQUIPMENT',
-        },
-      });
-
-      if (!equipment) {
-        throw new Error('Equipment not found or not of type EQUIPMENT');
-      }
-    }
-
     // Create batch
     const batch = await prisma.batch.create({
       data: {
         recipeId: data.recipeId,
         operatorUserId: data.operatorId,
-        equipmentId: data.equipmentId,
         startTime: new Date(),
         status: 'IN_PROGRESS',
       },
@@ -227,7 +206,6 @@ export class BatchesService {
             steps: {
               include: {
                 material: true,
-                equipment: true,
               },
               orderBy: {
                 stepOrder: 'asc',
@@ -242,7 +220,7 @@ export class BatchesService {
             role: true,
           },
         },
-        equipment: true,
+
         logs: true,
       },
     });
@@ -325,7 +303,6 @@ export class BatchesService {
         step: {
           include: {
             material: true,
-            equipment: true,
           },
         },
         material: true,
@@ -399,7 +376,6 @@ export class BatchesService {
             steps: {
               include: {
                 material: true,
-                equipment: true,
               },
               orderBy: {
                 stepOrder: 'asc',
@@ -414,13 +390,12 @@ export class BatchesService {
             role: true,
           },
         },
-        equipment: true,
+
         logs: {
           include: {
             step: {
               include: {
                 material: true,
-                equipment: true,
               },
             },
             material: true,
@@ -450,7 +425,6 @@ export class BatchesService {
             steps: {
               include: {
                 material: true,
-                equipment: true,
               },
               orderBy: {
                 stepOrder: 'asc',
@@ -465,13 +439,12 @@ export class BatchesService {
             role: true,
           },
         },
-        equipment: true,
+
         logs: {
           include: {
             step: {
               include: {
                 material: true,
-                equipment: true,
               },
             },
             material: true,
@@ -535,7 +508,7 @@ export class BatchesService {
   /**
    * Start a new process batch
    */
-  async startProcessBatch(data: { recipeId: number; operatorId: number; equipmentId?: number }) {
+  async startProcessBatch(data: { recipeId: number; operatorId: number }) {
     // Validate recipe exists
     const recipe = await prisma.recipe.findUnique({
       where: { id: data.recipeId },
@@ -561,20 +534,6 @@ export class BatchesService {
       throw new Error('Operator not found');
     }
 
-    // Validate equipment if provided
-    if (data.equipmentId) {
-      const equipment = await prisma.material.findFirst({
-        where: {
-          id: data.equipmentId,
-          type: 'EQUIPMENT',
-        },
-      });
-
-      if (!equipment) {
-        throw new Error('Equipment not found or not of type EQUIPMENT');
-      }
-    }
-
     // Check if operator already has an active process batch
     const existingProcessBatch = await prisma.batch.findFirst({
       where: {
@@ -592,7 +551,6 @@ export class BatchesService {
       data: {
         recipeId: data.recipeId,
         operatorUserId: data.operatorId,
-        equipmentId: data.equipmentId,
         startTime: new Date(),
         status: 'IN_PROGRESS',
       },
@@ -602,7 +560,6 @@ export class BatchesService {
             steps: {
               include: {
                 material: true,
-                equipment: true,
               },
               orderBy: {
                 stepOrder: 'asc',
@@ -617,7 +574,6 @@ export class BatchesService {
             role: true,
           },
         },
-        equipment: true,
         logs: true,
       },
     });
@@ -696,7 +652,6 @@ export class BatchesService {
         step: {
           include: {
             material: true,
-            equipment: true,
           },
         },
         material: true,
@@ -768,7 +723,6 @@ export class BatchesService {
             steps: {
               include: {
                 material: true,
-                equipment: true,
               },
               orderBy: {
                 stepOrder: 'asc',
@@ -783,13 +737,12 @@ export class BatchesService {
             role: true,
           },
         },
-        equipment: true,
+
         logs: {
           include: {
             step: {
               include: {
                 material: true,
-                equipment: true,
               },
             },
             material: true,
@@ -841,7 +794,6 @@ export class BatchesService {
             steps: {
               include: {
                 material: true,
-                equipment: true,
               },
             },
           },
@@ -853,13 +805,12 @@ export class BatchesService {
             role: true,
           },
         },
-        equipment: true,
+
         logs: {
           include: {
             step: {
               include: {
                 material: true,
-                equipment: true,
               },
             },
             material: true,
@@ -875,5 +826,77 @@ export class BatchesService {
     });
 
     return batches.map(transformBatch);
+  }
+
+  /**
+   * Abort a process batch
+   */
+  async abortProcessBatch(batchId: number) {
+    // Validate batch exists and is in progress
+    const batch = await prisma.batch.findUnique({
+      where: { id: batchId },
+      include: {
+        recipe: {
+          include: {
+            steps: true,
+          },
+        },
+        logs: true,
+      },
+    });
+
+    if (!batch) {
+      throw new Error('Batch not found');
+    }
+
+    if (batch.status !== 'IN_PROGRESS') {
+      throw new Error('Only IN_PROGRESS batches can be aborted');
+    }
+
+    // Update batch status to ABORTED
+    const updatedBatch = await prisma.batch.update({
+      where: { id: batchId },
+      data: {
+        status: 'ABORTED',
+        endTime: new Date(),
+      },
+      include: {
+        recipe: {
+          include: {
+            steps: {
+              include: {
+                material: true,
+              },
+              orderBy: {
+                stepOrder: 'asc',
+              },
+            },
+          },
+        },
+        operator: {
+          select: {
+            id: true,
+            username: true,
+            role: true,
+          },
+        },
+
+        logs: {
+          include: {
+            step: {
+              include: {
+                material: true,
+              },
+            },
+            material: true,
+          },
+          orderBy: {
+            timestamp: 'asc',
+          },
+        },
+      },
+    });
+
+    return transformBatch(updatedBatch);
   }
 }
