@@ -84,47 +84,37 @@ export const printLabel = async (params: PrintLabelParams): Promise<void> => {
 };
 
 /**
- * Format QR data with complete batch information
- * Format: recipeId|recipeName|stepId|stepOrder|materialCode|materialName|actualWeight|userId|timestamp|setpoint|tolerance
+ * Format QR data with essential information (optimized for shorter QR codes)
+ * Format: recipeId|stepId|materialCode|actualWeight|userId|timestamp
  */
 export const formatQRData = (data: {
   recipeId: number;
-  recipeName: string;
   stepId: number;
-  stepOrder: number;
   materialCode: string;
-  materialName: string;
   actualWeight: number;
   userId: number;
-  setpoint: number;
-  tolerance: number;
 }): string => {
   const timestamp = new Date().toISOString();
-  return `${data.recipeId}|${data.recipeName}|${data.stepId}|${data.stepOrder}|${data.materialCode}|${data.materialName}|${data.actualWeight}|${data.userId}|${timestamp}|${data.setpoint}|${data.tolerance}`;
+  return `${data.recipeId}|${data.stepId}|${data.materialCode}|${data.actualWeight}|${data.userId}|${timestamp}`;
 };
 
 /**
  * Parse QR data back into structured format
- * Format: recipeId|recipeName|stepId|stepOrder|materialCode|materialName|actualWeight|userId|timestamp|setpoint|tolerance
+ * Format: recipeId|stepId|materialCode|actualWeight|userId|timestamp
  */
 export const parseQRData = (qrData: string) => {
   const parts = qrData.split('|');
 
-  if (parts.length < 11) {
+  if (parts.length < 6) {
     throw new Error('Invalid QR code format');
   }
 
   return {
     recipeId: parseInt(parts[0]),
-    recipeName: parts[1],
-    stepId: parseInt(parts[2]),
-    stepOrder: parseInt(parts[3]),
-    materialCode: parts[4],
-    materialName: parts[5],
-    actualWeight: parseFloat(parts[6]),
-    userId: parseInt(parts[7]),
-    timestamp: parts[8],
-    setpoint: parseFloat(parts[9]),
-    tolerance: parseFloat(parts[10]),
+    stepId: parseInt(parts[1]),
+    materialCode: parts[2],
+    actualWeight: parseFloat(parts[3]),
+    userId: parseInt(parts[4]),
+    timestamp: parts[5],
   };
 };

@@ -170,48 +170,57 @@ const ProcessBatch: React.FC = () => {
       return;
     }
 
-    // TESTING MODE: Validations disabled - any barcode will be accepted
-    console.log('🧪 TESTING MODE: Barcode validations disabled');
+    // Validate barcode data matches current step
+    console.log('🔍 Validating barcode data...');
     console.log('📦 Received barcode data:', barcodeData);
     console.log('📋 Current step:', currentStep);
 
-    // Validate barcode data matches current step (DISABLED FOR TESTING)
-    // if (barcodeData.recipeId !== processBatch.currentRecipe.id) {
-    //   alert(
-    //     `Wrong recipe! Expected "${processBatch.currentRecipe.name}" but scanned "${barcodeData.recipeName}"`,
-    //   );
-    //   clearLastBarcode();
-    //   return;
-    // }
+    // Validation 1: Check Recipe ID
+    if (barcodeData.recipeId !== processBatch.currentRecipe.id) {
+      alert(
+        `❌ Wrong recipe!\n\nExpected Recipe ID: ${processBatch.currentRecipe.id} (${processBatch.currentRecipe.name})\nScanned Recipe ID: ${barcodeData.recipeId}\n\nPlease scan the correct packet for this recipe.`,
+      );
+      clearLastBarcode();
+      return;
+    }
 
-    // if (barcodeData.stepId !== currentStep.id) {
-    //   alert(
-    //     `Wrong step! Expected step ${currentStep.stepOrder} (${currentStep.material?.name}) but scanned step ${barcodeData.stepOrder} (${barcodeData.materialName})`,
-    //   );
-    //   clearLastBarcode();
-    //   return;
-    // }
+    // Validation 2: Check Step ID
+    if (barcodeData.stepId !== currentStep.id) {
+      alert(
+        `❌ Wrong step!\n\nExpected Step: ${currentStep.stepOrder} (${currentStep.material?.name})\nStep ID: ${currentStep.id}\n\nScanned Step ID: ${barcodeData.stepId}\n\nPlease scan the packet for the current step.`,
+      );
+      clearLastBarcode();
+      return;
+    }
 
-    // if (barcodeData.materialCode !== currentStep.material?.code) {
-    //   alert(
-    //     `Wrong material! Expected "${currentStep.material?.name}" but scanned "${barcodeData.materialName}"`,
-    //   );
-    //   clearLastBarcode();
-    //   return;
-    // }
+    // Validation 3: Check Material Code
+    if (barcodeData.materialCode !== currentStep.material?.code) {
+      alert(
+        `❌ Wrong material!\n\nExpected Material: ${currentStep.material?.name} (${currentStep.material?.code})\nScanned Material Code: ${barcodeData.materialCode}\n\nPlease scan the correct material packet.`,
+      );
+      clearLastBarcode();
+      return;
+    }
+
+    // All validations passed
+    console.log('✅ Barcode validation successful - all checks passed');
 
     try {
       setIsProcessingStep(true);
 
-      // Create the full QR data string for storage
-      const qrDataString = `${barcodeData.recipeId}|${barcodeData.recipeName}|${barcodeData.stepId}|${barcodeData.stepOrder}|${barcodeData.materialCode}|${barcodeData.materialName}|${barcodeData.actualWeight}|${barcodeData.userId}|${barcodeData.timestamp}|${barcodeData.setpoint}|${barcodeData.tolerance}`;
+      // Get setpoint and tolerance from current step (not from barcode)
+      const setpoint = Number(currentStep.setpoint);
+      const tolerance = Number(currentStep.tolerancePercent);
+
+      // Create the full QR data string for storage (6-field format)
+      const qrDataString = `${barcodeData.recipeId}|${barcodeData.stepId}|${barcodeData.materialCode}|${barcodeData.actualWeight}|${barcodeData.userId}|${barcodeData.timestamp}`;
 
       console.log('📤 Sending to backend:', {
         stepId: currentStep.id,
         materialId: currentStep.materialId,
         actualWeight: barcodeData.actualWeight,
-        setpointSnapshot: barcodeData.setpoint,
-        toleranceSnapshot: barcodeData.tolerance,
+        setpointSnapshot: setpoint,
+        toleranceSnapshot: tolerance,
         scannedQrCode: qrDataString,
         generatedQrCode: qrDataString, // Using scanned QR data for both fields
       });
@@ -221,8 +230,8 @@ const ProcessBatch: React.FC = () => {
         stepId: currentStep.id,
         materialId: currentStep.materialId,
         actualWeight: barcodeData.actualWeight,
-        setpointSnapshot: barcodeData.setpoint,
-        toleranceSnapshot: barcodeData.tolerance,
+        setpointSnapshot: setpoint,
+        toleranceSnapshot: tolerance,
         scannedQrCode: qrDataString,
         generatedQrCode: qrDataString, // Using scanned QR data since we're scanning pre-generated codes
       });
@@ -319,7 +328,7 @@ const ProcessBatch: React.FC = () => {
               <div className="flex items-center gap-2">
                 <span className="font-semibold">Last Scanned:</span>
                 <span className="px-3 py-1 rounded bg-blue-100 text-blue-800 text-sm">
-                  {lastScannedBarcode.materialName} - {lastScannedBarcode.actualWeight.toFixed(2)}{' '}
+                  {lastScannedBarcode.materialCode} - {lastScannedBarcode.actualWeight.toFixed(2)}{' '}
                   KG
                 </span>
               </div>

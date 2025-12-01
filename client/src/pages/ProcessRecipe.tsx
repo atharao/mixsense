@@ -142,18 +142,13 @@ const ProcessRecipe: React.FC = () => {
       const frozenWeightValue = currentWeight;
       setProcessRecipe(prev => ({ ...prev, isProcessing: true, frozenWeight: frozenWeightValue }));
 
-      // Format QR data with complete information using frozen weight
+      // Format QR data with essential information using frozen weight
       const qrData = formatQRData({
         recipeId: processRecipe.currentRecipe.id,
-        recipeName: processRecipe.currentRecipe.name,
         stepId: currentStep.id,
-        stepOrder: currentStep.stepOrder,
         materialCode: currentStep.material!.code,
-        materialName: currentStep.material!.name,
         actualWeight: frozenWeightValue,
         userId: user.id,
-        setpoint: setpoint,
-        tolerance: tolerance,
       });
 
       // Generate QR code image for display

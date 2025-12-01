@@ -2,16 +2,11 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 
 export interface BarcodeData {
   recipeId: number;
-  recipeName: string;
   stepId: number;
-  stepOrder: number;
   materialCode: string;
-  materialName: string;
   actualWeight: number;
   userId: number;
   timestamp: string;
-  setpoint: number;
-  tolerance: number;
 }
 
 const DEFAULT_BARCODE_WS_URL =
@@ -39,7 +34,7 @@ export const useBarcodeScanner = (
 
   /**
    * Parse barcode data from WebSocket message
-   * Format: recipeId|recipeName|stepId|stepOrder|materialCode|materialName|actualWeight|userId|timestamp|setpoint|tolerance
+   * Format: recipeId|stepId|materialCode|actualWeight|userId|timestamp
    */
   const parseBarcodeData = useCallback((message: string): BarcodeData | null => {
     console.log('🔍 Parsing barcode data:', message);
@@ -51,16 +46,11 @@ export const useBarcodeScanner = (
         console.log('✓ Parsed barcode as JSON:', data);
         return {
           recipeId: Number(data.recipeId),
-          recipeName: data.recipeName,
           stepId: Number(data.stepId),
-          stepOrder: Number(data.stepOrder),
           materialCode: data.materialCode,
-          materialName: data.materialName,
           actualWeight: Number(data.actualWeight),
           userId: Number(data.userId),
           timestamp: data.timestamp,
-          setpoint: Number(data.setpoint),
-          tolerance: Number(data.tolerance),
         };
       }
     } catch (e) {
@@ -70,19 +60,14 @@ export const useBarcodeScanner = (
 
     // Pipe-delimited format
     const parts = message.trim().split('|');
-    if (parts.length >= 11) {
+    if (parts.length >= 6) {
       const barcodeData: BarcodeData = {
         recipeId: parseInt(parts[0]),
-        recipeName: parts[1],
-        stepId: parseInt(parts[2]),
-        stepOrder: parseInt(parts[3]),
-        materialCode: parts[4],
-        materialName: parts[5],
-        actualWeight: parseFloat(parts[6]),
-        userId: parseInt(parts[7]),
-        timestamp: parts[8],
-        setpoint: parseFloat(parts[9]),
-        tolerance: parseFloat(parts[10]),
+        stepId: parseInt(parts[1]),
+        materialCode: parts[2],
+        actualWeight: parseFloat(parts[3]),
+        userId: parseInt(parts[4]),
+        timestamp: parts[5],
       };
 
       console.log('✓ Parsed barcode as pipe-delimited:', barcodeData);
