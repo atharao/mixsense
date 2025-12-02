@@ -10,13 +10,29 @@ export interface CreateMaterialData {
 export interface UpdateMaterialData {
   name?: string;
   code?: string;
+  updatedByUserId?: number;
 }
 
 export class MaterialsService {
   async getAllMaterials() {
     const materials = await prisma.material.findMany({
+      where: {
+        deletedAt: null, // Only show non-deleted materials
+      },
       include: {
         createdBy: {
+          select: {
+            id: true,
+            username: true,
+          },
+        },
+        updatedBy: {
+          select: {
+            id: true,
+            username: true,
+          },
+        },
+        deletedBy: {
           select: {
             id: true,
             username: true,
@@ -32,10 +48,25 @@ export class MaterialsService {
   }
 
   async getMaterialById(id: number) {
-    const material = await prisma.material.findUnique({
-      where: { id },
+    const material = await prisma.material.findFirst({
+      where: {
+        id,
+        deletedAt: null, // Only fetch non-deleted materials
+      },
       include: {
         createdBy: {
+          select: {
+            id: true,
+            username: true,
+          },
+        },
+        updatedBy: {
+          select: {
+            id: true,
+            username: true,
+          },
+        },
+        deletedBy: {
           select: {
             id: true,
             username: true,
@@ -56,6 +87,18 @@ export class MaterialsService {
       data,
       include: {
         createdBy: {
+          select: {
+            id: true,
+            username: true,
+          },
+        },
+        updatedBy: {
+          select: {
+            id: true,
+            username: true,
+          },
+        },
+        deletedBy: {
           select: {
             id: true,
             username: true,
@@ -85,41 +128,68 @@ export class MaterialsService {
             username: true,
           },
         },
+        updatedBy: {
+          select: {
+            id: true,
+            username: true,
+          },
+        },
+        deletedBy: {
+          select: {
+            id: true,
+            username: true,
+          },
+        },
       },
     });
 
-    logger.info(`Material updated: ${material.name} (${material.code})`);
+    logger.info(
+      `Material updated: ${material.name} (${material.code}) by user ${data.updatedByUserId || 'unknown'}`,
+    );
 
     return material;
   }
 
-  async deleteMaterial(id: number) {
-    // Check if material exists
-    await this.getMaterialById(id);
+  async deleteMaterial(id: number, deletedByUserId: number) {
+    // Check if material exists and is not already deleted
+    const material = await this.getMaterialById(id);
 
-    // Check if material is used in any recipe steps
-    const usedInSteps = await prisma.recipeStep.count({
-      where: { materialId: id },
-    });
-
-    if (usedInSteps > 0) {
-      throw new Error('Cannot delete material as it is used in recipe steps');
-    }
-
-    await prisma.material.delete({
+    // Soft delete - set deletedAt and deletedByUserId
+    await prisma.material.update({
       where: { id },
+      data: {
+        deletedAt: new Date(),
+        deletedByUserId,
+      },
     });
 
-    logger.info(`Material deleted: ID ${id}`);
+    logger.info(
+      `Material soft-deleted: ${material.name} (${material.code}) by user ${deletedByUserId}`,
+    );
 
     return { success: true };
   }
 
   async getMaterialByCode(code: string) {
-    const material = await prisma.material.findUnique({
-      where: { code },
+    const material = await prisma.material.findFirst({
+      where: {
+        code,
+        deletedAt: null, // Only find non-deleted materials
+      },
       include: {
         createdBy: {
+          select: {
+            id: true,
+            username: true,
+          },
+        },
+        updatedBy: {
+          select: {
+            id: true,
+            username: true,
+          },
+        },
+        deletedBy: {
           select: {
             id: true,
             username: true,

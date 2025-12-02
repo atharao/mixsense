@@ -11,17 +11,48 @@ datasource db {
 
 // User model for authentication and authorization
 model User {
-  id            Int        @id @default(autoincrement())
-  username      String     @unique @db.VarChar(50)
-  passwordHash  String     @map("password_hash") @db.VarChar(255)
-  role          Role
-  createdAt     DateTime   @default(now()) @map("created_at")
+  id                      Int        @id @default(autoincrement())
+  username                String     @unique @db.VarChar(50)
+  passwordHash            String     @map("password_hash") @db.VarChar(255)
+  role                    Role
 
-  // Relations
-  materials     Material[] @relation("CreatedMaterials")
-  recipes       Recipe[]   @relation("CreatedRecipes")
-  batches       Batch[]    @relation("OperatorBatches")
+  // Lifecycle tracking
+  createdAt               DateTime   @default(now()) @map("created_at")
+  updatedAt               DateTime   @default(now()) @updatedAt @map("updated_at")
+  updatedByUserId         Int?       @map("updated_by_user_id")
+  deletedAt               DateTime?  @map("deleted_at")
+  deletedByUserId         Int?       @map("deleted_by_user_id")
 
+  // Security tracking
+  passwordChangedAt       DateTime?  @map("password_changed_at")
+  passwordChangedByUserId Int?       @map("password_changed_by_user_id")
+  lastLoginAt             DateTime?  @map("last_login_at")
+
+  // Relations - Materials
+  materials          Material[] @relation("CreatedMaterials")
+  updatedMaterials   Material[] @relation("UpdatedMaterials")
+  deletedMaterials   Material[] @relation("DeletedMaterials")
+
+  // Relations - Recipes
+  recipes            Recipe[]   @relation("CreatedRecipes")
+  updatedRecipes     Recipe[]   @relation("UpdatedRecipes")
+  deletedRecipes     Recipe[]   @relation("DeletedRecipes")
+
+  // Relations - Batches
+  batches            Batch[]    @relation("OperatorBatches")
+
+  // Self-referential relations for user management
+  updatedBy          User?      @relation("UserUpdates", fields: [updatedByUserId], references: [id], onDelete: SetNull)
+  updatedUsers       User[]     @relation("UserUpdates")
+  deletedBy          User?      @relation("UserDeletes", fields: [deletedByUserId], references: [id], onDelete: SetNull)
+  deletedUsers       User[]     @relation("UserDeletes")
+  passwordChangedBy  User?      @relation("PasswordChanges", fields: [passwordChangedByUserId], references: [id], onDelete: SetNull)
+  passwordChangesFor User[]     @relation("PasswordChanges")
+
+  @@index([updatedByUserId])
+  @@index([deletedByUserId])
+  @@index([deletedAt])
+  @@index([passwordChangedByUserId])
   @@map("users")
 }
 
@@ -37,13 +68,22 @@ model Material {
   code             String        @unique @db.VarChar(50)
   createdByUserId  Int           @map("created_by_user_id")
   createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @default(now()) @updatedAt @map("updated_at")
+  updatedByUserId  Int?          @map("updated_by_user_id")
+  deletedAt        DateTime?     @map("deleted_at")
+  deletedByUserId  Int?          @map("deleted_by_user_id")
 
   // Relations
   createdBy        User          @relation("CreatedMaterials", fields: [createdByUserId], references: [id])
+  updatedBy        User?         @relation("UpdatedMaterials", fields: [updatedByUserId], references: [id])
+  deletedBy        User?         @relation("DeletedMaterials", fields: [deletedByUserId], references: [id])
   recipeSteps      RecipeStep[]  @relation("StepMaterial")
   batchLogs        BatchLog[]
 
   @@index([createdByUserId])
+  @@index([updatedByUserId])
+  @@index([deletedByUserId])
+  @@index([deletedAt])
   @@map("materials")
 }
 
@@ -53,14 +93,21 @@ model Recipe {
   name             String        @db.VarChar(100)
   createdByUserId  Int           @map("created_by_user_id")
   createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @default(now()) @updatedAt @map("updated_at")
+  updatedByUserId  Int?          @map("updated_by_user_id")
   deletedAt        DateTime?     @map("deleted_at")
+  deletedByUserId  Int?          @map("deleted_by_user_id")
 
   // Relations
   createdBy        User          @relation("CreatedRecipes", fields: [createdByUserId], references: [id])
+  updatedBy        User?         @relation("UpdatedRecipes", fields: [updatedByUserId], references: [id])
+  deletedBy        User?         @relation("DeletedRecipes", fields: [deletedByUserId], references: [id])
   steps            RecipeStep[]
   batches          Batch[]
 
   @@index([createdByUserId])
+  @@index([updatedByUserId])
+  @@index([deletedByUserId])
   @@index([deletedAt])
   @@map("recipes")
 }

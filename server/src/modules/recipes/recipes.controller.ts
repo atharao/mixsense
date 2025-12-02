@@ -154,6 +154,15 @@ export class RecipesController {
         });
       }
 
+      const userId = (req as any).user?.userId;
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'User not authenticated',
+        });
+      }
+
       const { name, steps } = req.body;
 
       // Validate steps if provided
@@ -194,7 +203,11 @@ export class RecipesController {
         }
       }
 
-      const recipe = await recipesService.updateRecipe(id, { name, steps });
+      const recipe = await recipesService.updateRecipe(id, {
+        name,
+        steps,
+        updatedByUserId: userId,
+      });
 
       return res.json({
         success: true,
@@ -221,7 +234,7 @@ export class RecipesController {
 
   /**
    * DELETE /api/recipes/:id
-   * Delete a recipe
+   * Delete a recipe (soft delete)
    */
   async deleteRecipe(req: Request, res: Response) {
     try {
@@ -234,7 +247,16 @@ export class RecipesController {
         });
       }
 
-      await recipesService.deleteRecipe(id);
+      const userId = (req as any).user?.userId;
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'User not authenticated',
+        });
+      }
+
+      await recipesService.deleteRecipe(id, userId);
 
       return res.json({
         success: true,
@@ -245,13 +267,6 @@ export class RecipesController {
 
       if (error.message === 'Recipe not found') {
         return res.status(404).json({
-          success: false,
-          message: error.message,
-        });
-      }
-
-      if (error.message.includes('Cannot delete recipe')) {
-        return res.status(400).json({
           success: false,
           message: error.message,
         });

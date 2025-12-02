@@ -113,11 +113,20 @@ export const updateMaterial = async (
       return;
     }
 
+    if (!req.user) {
+      res.status(401).json({
+        success: false,
+        message: 'Unauthorized',
+      });
+      return;
+    }
+
     const { name, code } = req.body;
 
     const material = await materialsService.updateMaterial(materialId, {
       name,
       code,
+      updatedByUserId: req.user.userId,
     });
 
     res.status(200).json({
@@ -154,7 +163,15 @@ export const deleteMaterial = async (
       return;
     }
 
-    await materialsService.deleteMaterial(materialId);
+    if (!req.user) {
+      res.status(401).json({
+        success: false,
+        message: 'Unauthorized',
+      });
+      return;
+    }
+
+    await materialsService.deleteMaterial(materialId, req.user.userId);
 
     res.status(200).json({
       success: true,
@@ -164,16 +181,6 @@ export const deleteMaterial = async (
     if (error instanceof Error) {
       if (error.message === 'Material not found') {
         res.status(404).json({
-          success: false,
-          message: error.message,
-        });
-        return;
-      }
-      if (
-        error.message.includes('Cannot delete material') ||
-        error.message.includes('is used in')
-      ) {
-        res.status(400).json({
           success: false,
           message: error.message,
         });

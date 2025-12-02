@@ -197,8 +197,16 @@ export const deleteUser = async (
       return;
     }
 
-    // Prevent users from deleting themselves
-    if (req.user && req.user.userId === userId) {
+    if (!req.user) {
+      res.status(401).json({
+        success: false,
+        message: 'Unauthorized',
+      });
+      return;
+    }
+
+    // Prevent users from deleting themselves (also checked in service)
+    if (req.user.userId === userId) {
       res.status(400).json({
         success: false,
         message: 'You cannot delete your own account',
@@ -206,7 +214,7 @@ export const deleteUser = async (
       return;
     }
 
-    await authService.deleteUser(userId);
+    await authService.deleteUser(userId, req.user.userId);
 
     res.status(200).json({
       success: true,
@@ -221,7 +229,10 @@ export const deleteUser = async (
         });
         return;
       }
-      if (error.message.includes('Admin users cannot be deleted')) {
+      if (
+        error.message.includes('Admin users cannot be deleted') ||
+        error.message.includes('You cannot delete your own account')
+      ) {
         res.status(403).json({
           success: false,
           message: error.message,
@@ -250,6 +261,14 @@ export const updateUser = async (
       return;
     }
 
+    if (!req.user) {
+      res.status(401).json({
+        success: false,
+        message: 'Unauthorized',
+      });
+      return;
+    }
+
     // Prevent role changes for security reasons
     if (role !== undefined) {
       res.status(403).json({
@@ -268,7 +287,7 @@ export const updateUser = async (
     }
 
     // Only allow username and password updates (no role changes)
-    const user = await authService.updateUser(userId, { username, password });
+    const user = await authService.updateUser(userId, req.user.userId, { username, password });
 
     res.status(200).json({
       success: true,

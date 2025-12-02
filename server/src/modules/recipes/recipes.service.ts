@@ -21,6 +21,9 @@ export class RecipesService {
    */
   async getAllRecipes() {
     const recipes = await prisma.recipe.findMany({
+      where: {
+        deletedAt: null, // Only show non-deleted recipes
+      },
       include: {
         steps: {
           include: {
@@ -43,8 +46,11 @@ export class RecipesService {
    * Get a single recipe by ID with steps
    */
   async getRecipeById(id: number) {
-    const recipe = await prisma.recipe.findUnique({
-      where: { id },
+    const recipe = await prisma.recipe.findFirst({
+      where: {
+        id,
+        deletedAt: null, // Only fetch non-deleted recipes
+      },
       include: {
         steps: {
           include: {
@@ -128,6 +134,7 @@ export class RecipesService {
     id: number,
     data: {
       name?: string;
+      updatedByUserId?: number;
       steps?: Array<{
         id?: number;
         materialId: number;
@@ -165,13 +172,24 @@ export class RecipesService {
 
     // Update recipe in a transaction
     const recipe = await prisma.$transaction(async tx => {
-      // Update recipe name if provided
-      await tx.recipe.update({
-        where: { id },
-        data: {
-          name: data.name,
-        },
-      });
+      // Prepare update data
+      const updateData: any = {};
+
+      if (data.name !== undefined) {
+        updateData.name = data.name;
+      }
+
+      if (data.updatedByUserId !== undefined) {
+        updateData.updatedByUserId = data.updatedByUserId;
+      }
+
+      // Update recipe if there's data to update
+      if (Object.keys(updateData).length > 0) {
+        await tx.recipe.update({
+          where: { id },
+          data: updateData,
+        });
+      }
 
       // If steps are provided, replace all steps
       if (data.steps) {
@@ -213,30 +231,19 @@ export class RecipesService {
   }
 
   /**
-   * Delete a recipe
+   * Delete a recipe (soft delete)
    */
-  async deleteRecipe(id: number) {
-    // Check if recipe exists
-    const recipe = await prisma.recipe.findUnique({
+  async deleteRecipe(id: number, deletedByUserId: number) {
+    // Check if recipe exists and is not already deleted
+    await this.getRecipeById(id);
+
+    // Soft delete - set deletedAt and deletedByUserId
+    await prisma.recipe.update({
       where: { id },
-    });
-
-    if (!recipe) {
-      throw new Error('Recipe not found');
-    }
-
-    // Check if recipe is being used in any batches
-    const batchesUsingRecipe = await prisma.batch.findFirst({
-      where: { recipeId: id },
-    });
-
-    if (batchesUsingRecipe) {
-      throw new Error('Cannot delete recipe that is used in batches');
-    }
-
-    // Delete recipe (steps will be cascade deleted)
-    await prisma.recipe.delete({
-      where: { id },
+      data: {
+        deletedAt: new Date(),
+        deletedByUserId,
+      },
     });
 
     return { success: true };

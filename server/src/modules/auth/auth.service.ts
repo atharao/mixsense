@@ -23,13 +23,16 @@ export class AuthService {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     const { username, password } = credentials;
 
-    // Find user by username
-    const user = await prisma.user.findUnique({
-      where: { username },
+    // Find user by username (exclude deleted users)
+    const user = await prisma.user.findFirst({
+      where: {
+        username,
+        deletedAt: null, // Only allow login for non-deleted users
+      },
     });
 
     if (!user) {
-      logger.warn(`Login attempt failed: User not found - ${username}`);
+      logger.warn(`Login attempt failed: User not found or deleted - ${username}`);
       throw new Error('Invalid username or password');
     }
 
@@ -40,6 +43,14 @@ export class AuthService {
       logger.warn(`Login attempt failed: Invalid password - ${username}`);
       throw new Error('Invalid username or password');
     }
+
+    // Update last login time
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        lastLoginAt: new Date(),
+      },
+    });
 
     // Generate JWT token
     const token = generateToken({
@@ -86,27 +97,12 @@ export class AuthService {
     };
   }
 
-  async getUserById(userId: number) {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        username: true,
-        role: true,
-        createdAt: true,
-      },
-    });
-
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    return user;
-  }
-
   async changePassword(userId: number, oldPassword: string, newPassword: string): Promise<void> {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
+    const user = await prisma.user.findFirst({
+      where: {
+        id: userId,
+        deletedAt: null, // Only allow password change for active users
+      },
     });
 
     if (!user) {
@@ -123,22 +119,32 @@ export class AuthService {
     // Hash new password
     const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
 
-    // Update password
+    // Update password with tracking
     await prisma.user.update({
       where: { id: userId },
-      data: { passwordHash },
+      data: {
+        passwordHash,
+        passwordChangedAt: new Date(),
+        passwordChangedByUserId: userId, // User changed their own password
+      },
     });
 
-    logger.info(`Password changed successfully for user: ${user.username}`);
+    logger.info(`Password changed successfully for user: ${user.username} (self-service)`);
   }
 
   async getAllUsers() {
     const users = await prisma.user.findMany({
+      where: {
+        deletedAt: null, // Only show active users
+      },
       select: {
         id: true,
         username: true,
         role: true,
         createdAt: true,
+        updatedAt: true,
+        lastLoginAt: true,
+        passwordChangedAt: true,
       },
       orderBy: {
         createdAt: 'desc',
@@ -148,10 +154,13 @@ export class AuthService {
     return users;
   }
 
-  async deleteUser(userId: number): Promise<void> {
-    // Check if user exists
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
+  async deleteUser(userId: number, deletedByUserId: number): Promise<void> {
+    // Check if user exists and is not already deleted
+    const user = await prisma.user.findFirst({
+      where: {
+        id: userId,
+        deletedAt: null,
+      },
     });
 
     if (!user) {
@@ -163,21 +172,34 @@ export class AuthService {
       throw new Error('Admin users cannot be deleted for security reasons');
     }
 
-    // Delete user
-    await prisma.user.delete({
+    // Prevent self-deletion
+    if (userId === deletedByUserId) {
+      throw new Error('You cannot delete your own account');
+    }
+
+    // Soft delete user
+    await prisma.user.update({
       where: { id: userId },
+      data: {
+        deletedAt: new Date(),
+        deletedByUserId,
+      },
     });
 
-    logger.info(`User deleted successfully: ${user.username}`);
+    logger.info(`User soft-deleted successfully: ${user.username} by user ID ${deletedByUserId}`);
   }
 
   async updateUser(
     userId: number,
+    updatedByUserId: number,
     data: { username?: string; role?: 'ADMIN' | 'OPERATOR'; password?: string },
   ): Promise<{ id: number; username: string; role: string }> {
-    // Check if user exists
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
+    // Check if user exists and is not deleted
+    const user = await prisma.user.findFirst({
+      where: {
+        id: userId,
+        deletedAt: null,
+      },
     });
 
     if (!user) {
@@ -185,7 +207,9 @@ export class AuthService {
     }
 
     // Prepare update data
-    const updateData: any = {};
+    const updateData: any = {
+      updatedByUserId, // Track who made the update
+    };
 
     if (data.username) {
       updateData.username = data.username;
@@ -197,6 +221,8 @@ export class AuthService {
 
     if (data.password) {
       updateData.passwordHash = await bcrypt.hash(data.password, SALT_ROUNDS);
+      updateData.passwordChangedAt = new Date();
+      updateData.passwordChangedByUserId = updatedByUserId; // Track who changed the password
     }
 
     // Update user
@@ -205,12 +231,40 @@ export class AuthService {
       data: updateData,
     });
 
-    logger.info(`User updated successfully: ${updatedUser.username}`);
+    logger.info(
+      `User updated successfully: ${updatedUser.username} by user ID ${updatedByUserId}${
+        data.password ? ' (password reset)' : ''
+      }`,
+    );
 
     return {
       id: updatedUser.id,
       username: updatedUser.username,
       role: updatedUser.role,
     };
+  }
+
+  async getUserById(userId: number) {
+    const user = await prisma.user.findFirst({
+      where: {
+        id: userId,
+        deletedAt: null, // Only return active users
+      },
+      select: {
+        id: true,
+        username: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true,
+        lastLoginAt: true,
+        passwordChangedAt: true,
+      },
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    return user;
   }
 }
