@@ -23,7 +23,7 @@ export const batchesApi = {
 
   startProcess: (data: StartBatchRequest) => post<Batch>('/batches/process/start', data),
 
-  logProcessStep: (batchId: number, data: LogStepRequest & { generatedQrCode: string }) =>
+  logProcessStep: (batchId: number, data: LogStepRequest) =>
     post<BatchLog>(`/batches/process/${batchId}/log-step`, data),
 
   completeProcess: (batchId: number) => put<Batch>(`/batches/process/${batchId}/complete`, {}),

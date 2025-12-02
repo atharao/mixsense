@@ -40,6 +40,7 @@ model User {
 
   // Relations - Batches
   batches            Batch[]    @relation("OperatorBatches")
+  processRecipeLogs  BatchLog[] @relation("ProcessRecipeUser")
 
   // Self-referential relations for user management
   updatedBy          User?      @relation("UserUpdates", fields: [updatedByUserId], references: [id], onDelete: SetNull)
@@ -160,24 +161,45 @@ enum BatchStatus {
 
 // BatchLog model for logging each step execution
 model BatchLog {
-  id                  Int           @id @default(autoincrement())
-  batchId             Int           @map("batch_id")
-  stepId              Int           @map("step_id")
-  materialId          Int           @map("material_id")
-  actualWeight        Decimal       @map("actual_weight") @db.Decimal(10, 3)
-  setpointSnapshot    Decimal       @map("setpoint_snapshot") @db.Decimal(10, 3)
-  toleranceSnapshot   Decimal       @map("tolerance_snapshot") @db.Decimal(5, 2)
-  scannedQrCode       String?       @map("scanned_qr_code") @db.Text
-  generatedQrCode     String?       @map("generated_qr_code") @db.Text
-  timestamp           DateTime      @default(now())
+  id                      Int           @id @default(autoincrement())
+  batchId                 Int           @map("batch_id")
+  stepId                  Int           @map("step_id")
+  materialId              Int           @map("material_id")
+
+  // Weight Information
+  actualWeight            Decimal       @map("actual_weight") @db.Decimal(10, 3)
+  setpointSnapshot        Decimal       @map("setpoint_snapshot") @db.Decimal(10, 3)
+  toleranceSnapshot       Decimal       @map("tolerance_snapshot") @db.Decimal(5, 2)
+
+  // Material Code Snapshot (for historical accuracy)
+  materialCodeSnapshot    String?       @map("material_code_snapshot") @db.VarChar(50)
+  materialNameSnapshot    String?       @map("material_name_snapshot") @db.VarChar(100)
+
+  // Recipe Information Snapshot
+  recipeNameSnapshot      String?       @map("recipe_name_snapshot") @db.VarChar(100)
+  stepOrderSnapshot       Int?          @map("step_order_snapshot")
+
+  // Process Recipe Phase (Packet Preparation)
+  processRecipeUserId     Int?          @map("process_recipe_user_id")
+  processRecipeTimestamp  DateTime?     @map("process_recipe_timestamp")
+
+  // Process Batch Phase (Packet Scanning)
+  processBatchTimestamp   DateTime      @default(now()) @map("process_batch_timestamp")
+
+  // QR Code Data (parsed fields for easy querying)
+  qrCodeData              String?       @map("qr_code_data") @db.Text
 
   // Relations
-  batch               Batch         @relation(fields: [batchId], references: [id], onDelete: Cascade)
-  step                RecipeStep    @relation(fields: [stepId], references: [id])
-  material            Material      @relation(fields: [materialId], references: [id])
+  batch                   Batch         @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  step                    RecipeStep    @relation(fields: [stepId], references: [id])
+  material                Material      @relation(fields: [materialId], references: [id])
+  processRecipeUser       User?         @relation("ProcessRecipeUser", fields: [processRecipeUserId], references: [id], onDelete: SetNull)
 
   @@index([batchId])
   @@index([stepId])
   @@index([materialId])
+  @@index([processRecipeUserId])
+  @@index([processRecipeTimestamp])
+  @@index([processBatchTimestamp])
   @@map("batch_logs")
 }

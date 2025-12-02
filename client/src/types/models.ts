@@ -68,10 +68,17 @@ export interface BatchLog {
   actualWeight: number;
   setpointSnapshot: number;
   toleranceSnapshot: number;
-  scannedQrCode?: string | null;
-  timestamp: string;
+  materialCodeSnapshot?: string | null;
+  materialNameSnapshot?: string | null;
+  recipeNameSnapshot?: string | null;
+  stepOrderSnapshot?: number | null;
+  processRecipeUserId?: number | null;
+  processRecipeTimestamp?: string | null;
+  processBatchTimestamp: string;
+  qrCodeData?: string | null;
   step?: RecipeStep;
   material?: Material;
+  processRecipeUser?: User;
 }
 
 // Dashboard types

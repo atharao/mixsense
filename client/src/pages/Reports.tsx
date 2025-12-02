@@ -299,16 +299,21 @@ const Reports: React.FC = () => {
                         <th>Actual</th>
                         <th>Tolerance</th>
                         <th>In Range</th>
-                        <th>QR Code</th>
-                        <th>Time</th>
+                        <th>Prepared By</th>
+                        <th>Prepared At</th>
+                        <th>Scanned At</th>
                       </tr>
                     </thead>
                     <tbody>
                       {selectedBatch.logs?.map(log => (
                         <tr key={log.id}>
-                          <td className="font-semibold">{log.step?.stepOrder}</td>
-                          <td>{log.material?.name}</td>
-                          <td className="font-mono text-sm">{log.material?.code}</td>
+                          <td className="font-semibold">
+                            {log.stepOrderSnapshot || log.step?.stepOrder}
+                          </td>
+                          <td>{log.materialNameSnapshot || log.material?.name}</td>
+                          <td className="font-mono text-sm">
+                            {log.materialCodeSnapshot || log.material?.code}
+                          </td>
                           <td>{Number(log.setpointSnapshot).toFixed(2)}g</td>
                           <td
                             className={
@@ -327,9 +332,14 @@ const Reports: React.FC = () => {
                               <span className="badge-danger">✗ No</span>
                             )}
                           </td>
-                          <td className="text-xs font-mono">{log.scannedQrCode || '-'}</td>
-                          <td className="text-sm text-gray-500">
-                            {new Date(log.timestamp).toLocaleTimeString()}
+                          <td className="text-sm">{log.processRecipeUser?.username || '-'}</td>
+                          <td className="text-xs text-gray-500">
+                            {log.processRecipeTimestamp
+                              ? new Date(log.processRecipeTimestamp).toLocaleString()
+                              : '-'}
+                          </td>
+                          <td className="text-xs text-gray-500">
+                            {new Date(log.processBatchTimestamp).toLocaleString()}
                           </td>
                         </tr>
                       ))}

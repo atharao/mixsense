@@ -159,7 +159,7 @@ export class BatchesController {
         actualWeight,
         setpointSnapshot,
         toleranceSnapshot,
-        scannedQrCode,
+        qrCodeData: scannedQrCode,
       } = req.body;
 
       // Validation
@@ -204,7 +204,7 @@ export class BatchesController {
         actualWeight: parseFloat(actualWeight),
         setpointSnapshot: parseFloat(setpointSnapshot),
         toleranceSnapshot: parseFloat(toleranceSnapshot),
-        scannedQrCode,
+        qrCodeData: scannedQrCode,
       });
 
       return res.status(201).json({
@@ -412,7 +412,7 @@ export class BatchesController {
         actualWeight,
         setpointSnapshot,
         toleranceSnapshot,
-        generatedQrCode,
+        qrCodeData: generatedQrCode,
       } = req.body;
 
       // Validation
@@ -458,7 +458,7 @@ export class BatchesController {
         actualWeight: parseFloat(actualWeight),
         setpointSnapshot: parseFloat(setpointSnapshot),
         toleranceSnapshot: parseFloat(toleranceSnapshot),
-        generatedQrCode,
+        qrCodeData: generatedQrCode,
       });
 
       return res.status(201).json({

@@ -91,9 +91,16 @@ export class ReportsService {
               },
             },
             material: true,
+            processRecipeUser: {
+              select: {
+                id: true,
+                username: true,
+                role: true,
+              },
+            },
           },
           orderBy: {
-            timestamp: 'asc',
+            processBatchTimestamp: 'asc',
           },
         },
       },
@@ -140,9 +147,16 @@ export class ReportsService {
               },
             },
             material: true,
+            processRecipeUser: {
+              select: {
+                id: true,
+                username: true,
+                role: true,
+              },
+            },
           },
           orderBy: {
-            timestamp: 'asc',
+            processBatchTimestamp: 'asc',
           },
         },
       },
@@ -171,14 +185,14 @@ export class ReportsService {
 
     // Batch logs table
     const tableData = batch.logs.map(log => [
-      log.step.stepOrder,
-      log.material.name,
-      log.material.code,
+      log.stepOrderSnapshot || log.step.stepOrder,
+      log.materialNameSnapshot || log.material.name,
+      log.materialCodeSnapshot || log.material.code,
       Number(log.setpointSnapshot).toFixed(2),
       Number(log.actualWeight).toFixed(2),
       `±${Number(log.toleranceSnapshot)}%`,
       isWithinTolerance(log) ? 'Yes' : 'No',
-      log.scannedQrCode || '-',
+      log.qrCodeData || '-',
     ]);
 
     autoTable(doc, {
@@ -316,15 +330,15 @@ export class ReportsService {
 
       batch.logs.forEach((log, index) => {
         detailSheet.getRow(startRow + 1 + index).values = [
-          log.step.stepOrder,
-          log.material.name,
-          log.material.code,
+          log.stepOrderSnapshot || log.step.stepOrder,
+          log.materialNameSnapshot || log.material.name,
+          log.materialCodeSnapshot || log.material.code,
           Number(log.setpointSnapshot),
           Number(log.actualWeight),
           `±${Number(log.toleranceSnapshot)}%`,
           isWithinTolerance(log) ? 'Yes' : 'No',
-          log.scannedQrCode || '-',
-          log.timestamp.toLocaleString(),
+          log.qrCodeData || '-',
+          log.processBatchTimestamp.toLocaleString(),
         ];
 
         // Color code tolerance

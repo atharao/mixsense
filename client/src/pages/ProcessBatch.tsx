@@ -222,8 +222,7 @@ const ProcessBatch: React.FC = () => {
         actualWeight: barcodeData.actualWeight,
         setpointSnapshot: setpoint,
         toleranceSnapshot: tolerance,
-        scannedQrCode: qrDataString,
-        generatedQrCode: qrDataString, // Using scanned QR data for both fields
+        qrCodeData: qrDataString,
       });
 
       // Log the step to backend
@@ -233,8 +232,7 @@ const ProcessBatch: React.FC = () => {
         actualWeight: barcodeData.actualWeight,
         setpointSnapshot: setpoint,
         toleranceSnapshot: tolerance,
-        scannedQrCode: qrDataString,
-        generatedQrCode: qrDataString, // Using scanned QR data since we're scanning pre-generated codes
+        qrCodeData: qrDataString,
       });
 
       // Update state - move to next step

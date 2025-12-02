@@ -81,7 +81,7 @@ export interface LogStepRequest {
   actualWeight: number;
   setpointSnapshot: number;
   toleranceSnapshot: number;
-  scannedQrCode?: string;
+  qrCodeData?: string;
 }
 
 export interface EndBatchRequest {

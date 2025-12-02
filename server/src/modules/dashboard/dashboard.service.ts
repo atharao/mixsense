@@ -250,7 +250,7 @@ export class DashboardService {
     const logsWithIssues = await prisma.batchLog.findMany({
       take: limit,
       orderBy: {
-        timestamp: 'desc',
+        processBatchTimestamp: 'desc',
       },
       include: {
         batch: {
@@ -276,10 +276,10 @@ export class DashboardService {
     return logsWithIssues.map(log => ({
       id: log.id,
       batchId: log.batchId,
-      batchRecipe: log.batch.recipe.name,
+      batchRecipe: log.recipeNameSnapshot || log.batch.recipe.name,
       operator: log.batch.operator.username,
-      material: log.material.name,
-      materialCode: log.material.code,
+      material: log.materialNameSnapshot || log.material.name,
+      materialCode: log.materialCodeSnapshot || log.material.code,
       setpoint: Number(log.setpointSnapshot),
       actualWeight: Number(log.actualWeight),
       tolerance: Number(log.toleranceSnapshot),
@@ -288,7 +288,7 @@ export class DashboardService {
           Number(log.setpointSnapshot)) *
         100
       ).toFixed(2),
-      timestamp: log.timestamp,
+      timestamp: log.processBatchTimestamp,
     }));
   }
 }

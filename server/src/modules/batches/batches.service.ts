@@ -99,9 +99,16 @@ export class BatchesService {
               },
             },
             material: true,
+            processRecipeUser: {
+              select: {
+                id: true,
+                username: true,
+                role: true,
+              },
+            },
           },
           orderBy: {
-            timestamp: 'asc',
+            processBatchTimestamp: 'asc',
           },
         },
       },
@@ -148,9 +155,16 @@ export class BatchesService {
               },
             },
             material: true,
+            processRecipeUser: {
+              select: {
+                id: true,
+                username: true,
+                role: true,
+              },
+            },
           },
           orderBy: {
-            timestamp: 'asc',
+            processBatchTimestamp: 'asc',
           },
         },
       },
@@ -239,7 +253,7 @@ export class BatchesService {
       actualWeight: number;
       setpointSnapshot: number;
       toleranceSnapshot: number;
-      scannedQrCode?: string;
+      qrCodeData?: string;
     },
   ) {
     // Validate batch exists and is in progress
@@ -248,7 +262,11 @@ export class BatchesService {
       include: {
         recipe: {
           include: {
-            steps: true,
+            steps: {
+              include: {
+                material: true,
+              },
+            },
           },
         },
       },
@@ -282,13 +300,25 @@ export class BatchesService {
       throw new Error('Material does not match step requirements');
     }
 
-    // Note: Tolerance validation can be calculated on the fly when needed
-    // const toleranceRange = (data.setpointSnapshot * data.toleranceSnapshot) / 100;
-    // const lowerBound = data.setpointSnapshot - toleranceRange;
-    // const upperBound = data.setpointSnapshot + toleranceRange;
-    // const withinTolerance = data.actualWeight >= lowerBound && data.actualWeight <= upperBound;
+    // Parse QR code data if provided (from Process Recipe)
+    let processRecipeUserId: number | undefined;
+    let processRecipeTimestamp: Date | undefined;
 
-    // Create batch log
+    if (data.qrCodeData) {
+      try {
+        // QR Format: recipeId|stepId|materialCode|actualWeight|userId|timestamp
+        const parts = data.qrCodeData.split('|');
+        if (parts.length >= 6) {
+          processRecipeUserId = parseInt(parts[4]);
+          processRecipeTimestamp = new Date(parts[5]);
+        }
+      } catch (error) {
+        // If parsing fails, continue without process recipe data
+        console.warn('Failed to parse QR code data:', error);
+      }
+    }
+
+    // Create batch log with comprehensive tracking
     const log = await prisma.batchLog.create({
       data: {
         batchId,
@@ -297,7 +327,13 @@ export class BatchesService {
         actualWeight: data.actualWeight,
         setpointSnapshot: data.setpointSnapshot,
         toleranceSnapshot: data.toleranceSnapshot,
-        scannedQrCode: data.scannedQrCode,
+        materialCodeSnapshot: material.code,
+        materialNameSnapshot: material.name,
+        recipeNameSnapshot: batch.recipe.name,
+        stepOrderSnapshot: step.stepOrder,
+        processRecipeUserId,
+        processRecipeTimestamp,
+        qrCodeData: data.qrCodeData,
       },
       include: {
         step: {
@@ -306,6 +342,13 @@ export class BatchesService {
           },
         },
         material: true,
+        processRecipeUser: {
+          select: {
+            id: true,
+            username: true,
+            role: true,
+          },
+        },
       },
     });
 
@@ -399,9 +442,16 @@ export class BatchesService {
               },
             },
             material: true,
+            processRecipeUser: {
+              select: {
+                id: true,
+                username: true,
+                role: true,
+              },
+            },
           },
           orderBy: {
-            timestamp: 'asc',
+            processBatchTimestamp: 'asc',
           },
         },
       },
@@ -448,9 +498,16 @@ export class BatchesService {
               },
             },
             material: true,
+            processRecipeUser: {
+              select: {
+                id: true,
+                username: true,
+                role: true,
+              },
+            },
           },
           orderBy: {
-            timestamp: 'asc',
+            processBatchTimestamp: 'asc',
           },
         },
       },
@@ -592,8 +649,7 @@ export class BatchesService {
       actualWeight: number;
       setpointSnapshot: number;
       toleranceSnapshot: number;
-      generatedQrCode?: string;
-      scannedQrCode?: string;
+      qrCodeData?: string;
     },
   ) {
     // Validate batch exists and is in progress
@@ -602,7 +658,11 @@ export class BatchesService {
       include: {
         recipe: {
           include: {
-            steps: true,
+            steps: {
+              include: {
+                material: true,
+              },
+            },
           },
         },
       },
@@ -636,7 +696,25 @@ export class BatchesService {
       throw new Error('Material does not match step requirements');
     }
 
-    // Create batch log with generated or scanned QR code
+    // Parse QR code data if provided (from Process Recipe)
+    let processRecipeUserId: number | undefined;
+    let processRecipeTimestamp: Date | undefined;
+
+    if (data.qrCodeData) {
+      try {
+        // QR Format: recipeId|stepId|materialCode|actualWeight|userId|timestamp
+        const parts = data.qrCodeData.split('|');
+        if (parts.length >= 6) {
+          processRecipeUserId = parseInt(parts[4]);
+          processRecipeTimestamp = new Date(parts[5]);
+        }
+      } catch (error) {
+        // If parsing fails, continue without process recipe data
+        console.warn('Failed to parse QR code data:', error);
+      }
+    }
+
+    // Create batch log with comprehensive tracking
     const log = await prisma.batchLog.create({
       data: {
         batchId,
@@ -645,8 +723,13 @@ export class BatchesService {
         actualWeight: data.actualWeight,
         setpointSnapshot: data.setpointSnapshot,
         toleranceSnapshot: data.toleranceSnapshot,
-        generatedQrCode: data.generatedQrCode,
-        scannedQrCode: data.scannedQrCode,
+        materialCodeSnapshot: material.code,
+        materialNameSnapshot: material.name,
+        recipeNameSnapshot: batch.recipe.name,
+        stepOrderSnapshot: step.stepOrder,
+        processRecipeUserId,
+        processRecipeTimestamp,
+        qrCodeData: data.qrCodeData,
       },
       include: {
         step: {
@@ -655,6 +738,13 @@ export class BatchesService {
           },
         },
         material: true,
+        processRecipeUser: {
+          select: {
+            id: true,
+            username: true,
+            role: true,
+          },
+        },
       },
     });
 
@@ -746,9 +836,16 @@ export class BatchesService {
               },
             },
             material: true,
+            processRecipeUser: {
+              select: {
+                id: true,
+                username: true,
+                role: true,
+              },
+            },
           },
           orderBy: {
-            timestamp: 'asc',
+            processBatchTimestamp: 'asc',
           },
         },
       },
@@ -814,9 +911,16 @@ export class BatchesService {
               },
             },
             material: true,
+            processRecipeUser: {
+              select: {
+                id: true,
+                username: true,
+                role: true,
+              },
+            },
           },
           orderBy: {
-            timestamp: 'asc',
+            processBatchTimestamp: 'asc',
           },
         },
       },
@@ -889,9 +993,16 @@ export class BatchesService {
               },
             },
             material: true,
+            processRecipeUser: {
+              select: {
+                id: true,
+                username: true,
+                role: true,
+              },
+            },
           },
           orderBy: {
-            timestamp: 'asc',
+            processBatchTimestamp: 'asc',
           },
         },
       },
