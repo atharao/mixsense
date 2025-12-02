@@ -38,27 +38,21 @@ const ProcessRecipe: React.FC = () => {
     frozenWeight: null,
   });
 
-  // Use WebSocket with manual connection control (no auto-connect)
+  // WebSocket connects automatically on mount and disconnects on unmount
   const {
     isConnected,
-    hasDataReceived,
     error: wsError,
     currentWeight,
     isStable,
-    connect,
-    disconnect,
-  } = useWebSocket(undefined, { autoConnect: false });
+    isMonitoring,
+    startMonitoring,
+    stopMonitoring,
+  } = useWebSocket();
 
   useEffect(() => {
     console.log('🟢 ProcessRecipe component mounted');
     loadRecipes();
-
-    // Cleanup: disconnect WebSocket when component unmounts or user navigates away
-    return () => {
-      console.log('🔴 ProcessRecipe component unmounting - disconnecting WebSocket');
-      disconnect();
-    };
-  }, []); // Run only once on mount, disconnect on unmount
+  }, []);
 
   const loadRecipes = async () => {
     try {
@@ -90,9 +84,9 @@ const ProcessRecipe: React.FC = () => {
         frozenWeight: null,
       });
 
-      // Connect to WebSocket when recipe is selected
-      console.log('🟢 ProcessRecipe: Calling connect() because user clicked Start Process Recipe');
-      connect();
+      // Start monitoring weight data
+      console.log('🟢 ProcessRecipe: Starting weight monitoring');
+      startMonitoring();
 
       setIsStarting(false);
     } catch (error: any) {
@@ -206,8 +200,8 @@ const ProcessRecipe: React.FC = () => {
     // Check if all steps are completed
     if (nextStepIndex >= (processRecipe.currentRecipe?.steps?.length || 0)) {
       alert('All steps completed! You can now use these packets in Process Batch.');
-      // Disconnect WebSocket when process is complete
-      disconnect();
+      // Stop monitoring when process is complete
+      stopMonitoring();
       // Reset to recipe selection
       setProcessRecipe({
         currentRecipe: null,
@@ -246,44 +240,38 @@ const ProcessRecipe: React.FC = () => {
         </p>
       </div>
 
-      {/* WebSocket Connection Status - Only show when recipe is selected */}
-      {processRecipe.currentRecipe && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold mb-4">Weight Monitor</h2>
-          <div className="flex items-center gap-4">
+      {/* WebSocket Connection Status - Always visible */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-xl font-semibold mb-4">Weight Monitor</h2>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">Status:</span>
+            <span
+              className={`px-3 py-1 rounded ${
+                isConnected ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+              }`}
+            >
+              {isConnected ? 'CONNECTED' : 'DISCONNECTED'}
+            </span>
+          </div>
+
+          {isMonitoring && (
             <div className="flex items-center gap-2">
-              <span className="font-semibold">Status:</span>
+              <span className="font-semibold">Current Weight:</span>
               <span
-                className={`px-3 py-1 rounded ${
-                  hasDataReceived ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                className={`px-3 py-1 rounded text-xl font-bold ${
+                  isStable ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'
                 }`}
               >
-                {hasDataReceived
-                  ? 'CONNECTED'
-                  : isConnected
-                    ? 'Waiting for data...'
-                    : 'Disconnected'}
+                {currentWeight !== null ? currentWeight.toFixed(2) : '0.00'} KG
+                {isStable && ' (Stable)'}
               </span>
             </div>
+          )}
 
-            {hasDataReceived && (
-              <div className="flex items-center gap-2">
-                <span className="font-semibold">Current Weight:</span>
-                <span
-                  className={`px-3 py-1 rounded text-xl font-bold ${
-                    isStable ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'
-                  }`}
-                >
-                  {currentWeight !== null ? currentWeight.toFixed(2) : '0.00'} KG
-                  {isStable && ' (Stable)'}
-                </span>
-              </div>
-            )}
-
-            {wsError && <div className="text-red-600">Error: {wsError}</div>}
-          </div>
+          {wsError && <div className="text-red-600">Error: {wsError}</div>}
         </div>
-      )}
+      </div>
 
       {/* Recipe Selection */}
       {!processRecipe.currentRecipe && (
@@ -447,9 +435,7 @@ const ProcessRecipe: React.FC = () => {
 
                 <button
                   onClick={handleNextStep}
-                  disabled={
-                    processRecipe.isProcessing || currentWeight === null || !hasDataReceived
-                  }
+                  disabled={processRecipe.isProcessing || currentWeight === null || !isMonitoring}
                   className="w-full py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 font-semibold text-lg"
                 >
                   NEXT ➔

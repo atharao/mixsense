@@ -33,28 +33,14 @@ const ProcessBatch: React.FC = () => {
     completedSteps: [],
   });
 
-  // Use barcode scanner with manual connection control (no auto-connect)
-  const {
-    isConnected,
-    hasDataReceived,
-    error: wsError,
-    lastScannedBarcode,
-    clearLastBarcode,
-    connect,
-    disconnect,
-  } = useBarcodeScanner(undefined, { autoConnect: false });
+  // Barcode scanner connects automatically on mount and disconnects on unmount
+  const { isConnected, error: wsError, lastScannedBarcode, clearLastBarcode } = useBarcodeScanner();
 
   useEffect(() => {
     console.log('🟢 ProcessBatch component mounted');
     loadRecipes();
     checkForActiveBatch();
-
-    // Cleanup: disconnect WebSocket when component unmounts or user navigates away
-    return () => {
-      console.log('🔴 ProcessBatch component unmounting - disconnecting barcode WebSocket');
-      disconnect();
-    };
-  }, []); // Run only once on mount, disconnect on unmount
+  }, []);
 
   // Handle barcode scan
   useEffect(() => {
@@ -93,10 +79,6 @@ const ProcessBatch: React.FC = () => {
           currentStepIndex: currentStepIndex >= 0 ? currentStepIndex : 0,
           completedSteps: completedStepIndices,
         });
-
-        // Connect to barcode scanner WebSocket for active batch
-        console.log('🟢 ProcessBatch: Connecting to barcode scanner for active batch');
-        connect();
 
         alert('Resuming active batch: ' + recipe.name);
       }
@@ -140,10 +122,6 @@ const ProcessBatch: React.FC = () => {
         currentStepIndex: 0,
         completedSteps: [],
       });
-
-      // Connect to barcode scanner WebSocket when batch starts
-      console.log('🟢 ProcessBatch: Calling connect() because user clicked Start Process Batch');
-      connect();
 
       setIsStarting(false);
     } catch (error: any) {
@@ -274,10 +252,6 @@ const ProcessBatch: React.FC = () => {
 
       alert('Batch completed successfully!');
 
-      // Disconnect barcode scanner WebSocket when batch completes
-      console.log('🔴 ProcessBatch: Disconnecting barcode scanner - batch completed');
-      disconnect();
-
       // Reset state
       setProcessBatch({
         activeBatch: null,
@@ -309,10 +283,6 @@ const ProcessBatch: React.FC = () => {
 
       alert('Batch aborted successfully.');
 
-      // Disconnect barcode scanner WebSocket when batch is aborted
-      console.log('🔴 ProcessBatch: Disconnecting barcode scanner - batch aborted');
-      disconnect();
-
       // Reset state
       setProcessBatch({
         activeBatch: null,
@@ -338,40 +308,33 @@ const ProcessBatch: React.FC = () => {
         <p className="text-gray-500">Scan pre-packaged materials to record batch production</p>
       </div>
 
-      {/* Barcode Scanner Connection Status - Only show when batch is active */}
-      {processBatch.activeBatch && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold mb-4">Barcode Scanner Monitor</h2>
-          <div className="flex items-center gap-4">
+      {/* Barcode Scanner Connection Status - Always visible */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-xl font-semibold mb-4">Barcode Scanner Monitor</h2>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">Status:</span>
+            <span
+              className={`px-3 py-1 rounded ${
+                isConnected ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+              }`}
+            >
+              {isConnected ? 'CONNECTED' : 'DISCONNECTED'}
+            </span>
+          </div>
+
+          {lastScannedBarcode && (
             <div className="flex items-center gap-2">
-              <span className="font-semibold">Status:</span>
-              <span
-                className={`px-3 py-1 rounded ${
-                  hasDataReceived ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
-                }`}
-              >
-                {hasDataReceived
-                  ? 'CONNECTED'
-                  : isConnected
-                    ? 'Waiting for scan...'
-                    : 'Disconnected'}
+              <span className="font-semibold">Last Scanned:</span>
+              <span className="px-3 py-1 rounded bg-blue-100 text-blue-800 text-sm">
+                {lastScannedBarcode.materialCode} - {lastScannedBarcode.actualWeight.toFixed(2)} KG
               </span>
             </div>
+          )}
 
-            {lastScannedBarcode && (
-              <div className="flex items-center gap-2">
-                <span className="font-semibold">Last Scanned:</span>
-                <span className="px-3 py-1 rounded bg-blue-100 text-blue-800 text-sm">
-                  {lastScannedBarcode.materialCode} - {lastScannedBarcode.actualWeight.toFixed(2)}{' '}
-                  KG
-                </span>
-              </div>
-            )}
-
-            {wsError && <div className="text-red-600">Error: {wsError}</div>}
-          </div>
+          {wsError && <div className="text-red-600">Error: {wsError}</div>}
         </div>
-      )}
+      </div>
 
       {/* Recipe Selection */}
       {!processBatch.activeBatch && (
