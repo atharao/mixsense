@@ -46,7 +46,7 @@ export interface RecipeStep {
 }
 
 // Batch types
-export type BatchStatus = 'IN_PROGRESS' | 'COMPLETED' | 'ABORTED';
+export type BatchStatus = 'IN_PROGRESS' | 'PROCESSED' | 'ABORTED';
 
 export interface Batch {
   id: number;

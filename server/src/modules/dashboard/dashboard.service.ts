@@ -88,7 +88,7 @@ export class DashboardService {
     const batches = await prisma.batch.findMany({
       where: {
         startTime: { gte: startDate },
-        status: { in: ['COMPLETED', 'ABORTED'] },
+        status: { in: ['PROCESSED', 'ABORTED'] },
       },
       select: {
         id: true,
@@ -100,18 +100,18 @@ export class DashboardService {
     });
 
     // Group by date
-    const trendData: { [key: string]: { completed: number; aborted: number; total: number } } = {};
+    const trendData: { [key: string]: { processed: number; aborted: number; total: number } } = {};
 
     batches.forEach(batch => {
       const dateKey = batch.startTime.toISOString().split('T')[0];
 
       if (!trendData[dateKey]) {
-        trendData[dateKey] = { completed: 0, aborted: 0, total: 0 };
+        trendData[dateKey] = { processed: 0, aborted: 0, total: 0 };
       }
 
       trendData[dateKey].total++;
-      if (batch.status === 'COMPLETED') {
-        trendData[dateKey].completed++;
+      if (batch.status === 'PROCESSED') {
+        trendData[dateKey].processed++;
       } else if (batch.status === 'ABORTED') {
         trendData[dateKey].aborted++;
       }
@@ -125,7 +125,7 @@ export class DashboardService {
         ...trendData[date],
         completionRate:
           trendData[date].total > 0
-            ? ((trendData[date].completed / trendData[date].total) * 100).toFixed(1)
+            ? ((trendData[date].processed / trendData[date].total) * 100).toFixed(1)
             : '0',
       }));
 
@@ -194,11 +194,11 @@ export class DashboardService {
 
     const operatorStats = await Promise.all(
       operators.map(async operator => {
-        const [completed, aborted, activeBatch] = await Promise.all([
+        const [processed, aborted, activeBatch] = await Promise.all([
           prisma.batch.count({
             where: {
               operatorUserId: operator.id,
-              status: 'COMPLETED',
+              status: 'PROCESSED',
             },
           }),
           prisma.batch.count({
@@ -219,13 +219,13 @@ export class DashboardService {
         ]);
 
         const total = operator._count.batches;
-        const completionRate = total > 0 ? ((completed / total) * 100).toFixed(1) : '0';
+        const completionRate = total > 0 ? ((processed / total) * 100).toFixed(1) : '0';
 
         return {
           id: operator.id,
           username: operator.username,
           totalBatches: total,
-          completed,
+          processed,
           aborted,
           completionRate: parseFloat(completionRate),
           currentBatch: activeBatch

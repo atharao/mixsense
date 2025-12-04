@@ -113,7 +113,7 @@ src/
 - `Material` - Both ingredients and equipment (type: INGREDIENT/EQUIPMENT)
 - `Recipe` - Mixing procedures with soft delete (deletedAt)
 - `RecipeStep` - Individual steps with setpoint, tolerance, QR code
-- `Batch` - Execution instances (status: IN_PROGRESS/COMPLETED/ABORTED/PROCESSED)
+- `Batch` - Execution instances (status: IN_PROGRESS/PROCESSED/ABORTED)
 - `BatchLog` - Historical step logs with snapshots
 
 **Critical Relationships:**
@@ -175,7 +175,7 @@ cp client/.env.example client/.env
    - User monitors weight until it matches setpoint
    - Click **NEXT** button when ready
 7. **On NEXT Click**:
-   - Generate enhanced QR code with format: `recipeId|recipeName|stepId|stepOrder|materialCode|materialName|actualWeight|userId|timestamp|setpoint|tolerance`
+   - Generate QR code with format: `recipeId|stepId|materialCode|actualWeight|userId|timestamp`
    - Display QR code popup temporarily
    - Call ZPL Printer API (POST http://localhost:9100/) to print label
    - After 3 seconds: move to next step
@@ -246,7 +246,7 @@ isWithinTolerance = actualWeight >= (setpoint - toleranceRange)
 - Used in: Process Batch page
 - Receives barcode scan data from scanner via Node-RED
 - Supported message formats:
-  - Pipe-delimited: `recipeId|recipeName|stepId|stepOrder|materialCode|materialName|actualWeight|userId|timestamp|setpoint|tolerance`
+  - Pipe-delimited: `recipeId|stepId|materialCode|actualWeight|userId|timestamp`
   - JSON: `{"recipeId": 1, "recipeName": "...", ...}`
 - Features:
   - Parses and validates barcode data

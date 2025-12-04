@@ -93,7 +93,7 @@ const Dashboard: React.FC = () => {
               <span className="text-2xl">📊</span>
             </div>
           </div>
-          <p className="text-xs text-gray-500 mt-2">Completed today</p>
+          <p className="text-xs text-gray-500 mt-2">Processed today</p>
         </div>
 
         <div className="card">
@@ -135,9 +135,9 @@ const Dashboard: React.FC = () => {
             <Legend />
             <Line
               type="monotone"
-              dataKey="completed"
+              dataKey="processed"
               stroke="#22c55e"
-              name="Completed"
+              name="Processed"
               strokeWidth={2}
             />
             <Line
@@ -188,8 +188,8 @@ const Dashboard: React.FC = () => {
                 </div>
                 <div className="flex gap-4 text-sm text-gray-600">
                   <span>Total: {op.totalBatches}</span>
-                  <span className="text-success-600">✓ {op.completed}</span>
-                  <span className="text-danger-600">✗ {op.aborted}</span>
+                  <span className="text-success-600">Processed: {op.processed}</span>
+                  <span className="text-danger-600">Aborted: {op.aborted}</span>
                 </div>
                 {op.currentBatch && (
                   <p className="text-xs text-primary-600 mt-2">

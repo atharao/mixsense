@@ -55,9 +55,9 @@ export class ReportsService {
       }
     }
 
-    // Only show completed or aborted batches in reports
+    // Only show processed or aborted batches in reports
     where.status = {
-      in: ['COMPLETED', 'ABORTED'],
+      in: ['PROCESSED', 'ABORTED'],
     };
 
     const batches = await prisma.batch.findMany({
@@ -180,7 +180,7 @@ export class ReportsService {
     doc.text(`Status: ${batch.status}`, 14, 56);
     doc.text(`Started: ${batch.startTime.toLocaleString()}`, 14, 63);
     if (batch.endTime) {
-      doc.text(`Completed: ${batch.endTime.toLocaleString()}`, 14, 70);
+      doc.text(`Finished: ${batch.endTime.toLocaleString()}`, 14, 70);
     }
 
     // Batch logs table
@@ -252,7 +252,7 @@ export class ReportsService {
       { header: 'Operator', key: 'operator', width: 20 },
       { header: 'Status', key: 'status', width: 12 },
       { header: 'Started', key: 'started', width: 20 },
-      { header: 'Completed', key: 'completed', width: 20 },
+      { header: 'Finished', key: 'finished', width: 20 },
       { header: 'Total Steps', key: 'totalSteps', width: 12 },
       { header: 'In Tolerance', key: 'inTolerance', width: 12 },
       { header: 'Tolerance Rate', key: 'toleranceRate', width: 15 },
@@ -270,7 +270,7 @@ export class ReportsService {
         operator: batch.operator.username,
         status: batch.status,
         started: batch.startTime.toLocaleString(),
-        completed: batch.endTime ? batch.endTime.toLocaleString() : '-',
+        finished: batch.endTime ? batch.endTime.toLocaleString() : '-',
         totalSteps,
         inTolerance: stepsInTolerance,
         toleranceRate: `${toleranceRate}%`,
@@ -303,7 +303,7 @@ export class ReportsService {
       detailSheet.getCell('A5').value = 'Started:';
       detailSheet.getCell('B5').value = batch.startTime.toLocaleString();
       if (batch.endTime) {
-        detailSheet.getCell('A6').value = 'Completed:';
+        detailSheet.getCell('A6').value = 'Finished:';
         detailSheet.getCell('B6').value = batch.endTime.toLocaleString();
       }
 
@@ -380,7 +380,7 @@ export class ReportsService {
     const batches = await this.getBatchReports(filters);
 
     const totalBatches = batches.length;
-    const completedBatches = batches.filter(b => b.status === 'COMPLETED').length;
+    const completedBatches = batches.filter(b => b.status === 'PROCESSED').length;
     const abortedBatches = batches.filter(b => b.status === 'ABORTED').length;
 
     let totalSteps = 0;

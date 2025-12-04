@@ -85,7 +85,7 @@ export interface LogStepRequest {
 }
 
 export interface EndBatchRequest {
-  status: 'COMPLETED' | 'ABORTED';
+  status: 'PROCESSED' | 'ABORTED';
 }
 
 // Report API types

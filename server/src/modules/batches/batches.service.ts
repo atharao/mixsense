@@ -309,8 +309,22 @@ export class BatchesService {
         // QR Format: recipeId|stepId|materialCode|actualWeight|userId|timestamp
         const parts = data.qrCodeData.split('|');
         if (parts.length >= 6) {
-          processRecipeUserId = parseInt(parts[4]);
-          processRecipeTimestamp = new Date(parts[5]);
+          const userId = parseInt(parts[4]);
+
+          // Validate that the user exists before using it
+          if (!isNaN(userId)) {
+            const userExists = await prisma.user.findUnique({
+              where: { id: userId },
+              select: { id: true },
+            });
+
+            if (userExists) {
+              processRecipeUserId = userId;
+              processRecipeTimestamp = new Date(parts[5]);
+            } else {
+              console.warn(`User ID ${userId} from QR code does not exist in database`);
+            }
+          }
         }
       } catch (error) {
         // If parsing fails, continue without process recipe data
@@ -370,7 +384,7 @@ export class BatchesService {
   /**
    * End a batch
    */
-  async endBatch(batchId: number, data: { status: 'COMPLETED' | 'ABORTED' }) {
+  async endBatch(batchId: number, data: { status: 'PROCESSED' | 'ABORTED' }) {
     // Validate batch exists and is in progress
     const batch = await prisma.batch.findUnique({
       where: { id: batchId },
@@ -393,7 +407,7 @@ export class BatchesService {
     }
 
     // If completing, validate all steps are logged
-    if (data.status === 'COMPLETED') {
+    if (data.status === 'PROCESSED') {
       const recipeStepIds = batch.recipe.steps.map(s => s.id);
       const loggedStepIds = new Set(batch.logs.map(l => l.stepId));
 
@@ -545,19 +559,19 @@ export class BatchesService {
       }
     }
 
-    const [total, completed, aborted, inProgress] = await Promise.all([
+    const [total, processed, aborted, inProgress] = await Promise.all([
       prisma.batch.count({ where }),
-      prisma.batch.count({ where: { ...where, status: 'COMPLETED' } }),
+      prisma.batch.count({ where: { ...where, status: 'PROCESSED' } }),
       prisma.batch.count({ where: { ...where, status: 'ABORTED' } }),
       prisma.batch.count({ where: { ...where, status: 'IN_PROGRESS' } }),
     ]);
 
     return {
       total,
-      completed,
+      processed,
       aborted,
       inProgress,
-      completionRate: total > 0 ? (completed / total) * 100 : 0,
+      completionRate: total > 0 ? (processed / total) * 100 : 0,
       abortRate: total > 0 ? (aborted / total) * 100 : 0,
     };
   }
@@ -705,8 +719,22 @@ export class BatchesService {
         // QR Format: recipeId|stepId|materialCode|actualWeight|userId|timestamp
         const parts = data.qrCodeData.split('|');
         if (parts.length >= 6) {
-          processRecipeUserId = parseInt(parts[4]);
-          processRecipeTimestamp = new Date(parts[5]);
+          const userId = parseInt(parts[4]);
+
+          // Validate that the user exists before using it
+          if (!isNaN(userId)) {
+            const userExists = await prisma.user.findUnique({
+              where: { id: userId },
+              select: { id: true },
+            });
+
+            if (userExists) {
+              processRecipeUserId = userId;
+              processRecipeTimestamp = new Date(parts[5]);
+            } else {
+              console.warn(`User ID ${userId} from QR code does not exist in database`);
+            }
+          }
         }
       } catch (error) {
         // If parsing fails, continue without process recipe data

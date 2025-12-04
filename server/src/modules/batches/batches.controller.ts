@@ -241,10 +241,10 @@ export class BatchesController {
       const { status } = req.body;
 
       // Validation
-      if (!status || !['COMPLETED', 'ABORTED'].includes(status)) {
+      if (!status || !['PROCESSED', 'ABORTED'].includes(status)) {
         return res.status(400).json({
           success: false,
-          message: 'Status must be either COMPLETED or ABORTED',
+          message: 'Status must be either PROCESSED or ABORTED',
         });
       }
 

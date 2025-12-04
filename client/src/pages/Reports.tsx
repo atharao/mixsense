@@ -98,7 +98,7 @@ const Reports: React.FC = () => {
 
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
-      case 'COMPLETED':
+      case 'PROCESSED':
         return 'badge-success';
       case 'ABORTED':
         return 'badge-danger';
@@ -205,7 +205,7 @@ const Reports: React.FC = () => {
                   <th>Operator</th>
                   <th>Status</th>
                   <th>Started</th>
-                  <th>Completed</th>
+                  <th>Finished</th>
                   <th>Steps</th>
                   <th>Actions</th>
                 </tr>
@@ -278,7 +278,7 @@ const Reports: React.FC = () => {
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Completed</p>
+                  <p className="text-sm text-gray-500">Finished</p>
                   <p className="font-semibold text-sm">
                     {selectedBatch.endTime ? new Date(selectedBatch.endTime).toLocaleString() : '-'}
                   </p>

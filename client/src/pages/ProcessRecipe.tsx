@@ -360,7 +360,7 @@ const ProcessRecipe: React.FC = () => {
                           </span>
                           {isCompleted && (
                             <span className="px-2 py-1 bg-green-200 text-green-800 rounded text-xs">
-                              ✓ Completed
+                              ✓ Done
                             </span>
                           )}
                           {isCurrentStep && (

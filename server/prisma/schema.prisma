@@ -154,9 +154,8 @@ model Batch {
 
 enum BatchStatus {
   IN_PROGRESS
-  COMPLETED
-  ABORTED
   PROCESSED
+  ABORTED
 }
 
 // BatchLog model for logging each step execution
