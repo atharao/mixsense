@@ -254,9 +254,13 @@ isWithinTolerance = actualWeight >= (setpoint - toleranceRange)
   - Auto-reconnect on disconnect
 
 **Node-RED Setup:**
-1. Configure Node-RED to expose weight data on `/ws/weight` (port 1880)
-2. Configure Node-RED to expose barcode scan data on `/ws/barcode` (port 1880)
-3. Data should be published in real-time as it arrives
+1. Import the pre-configured flow from `node-red/flows.json` into Node-RED
+2. The flow exposes two WebSocket endpoints:
+   - Weight data: `/ws/weight` (port 1880)
+   - Barcode scan data: `/ws/barcode` (port 1880)
+3. Test data generators included - replace with actual hardware nodes for production
+4. Data should be published in real-time as it arrives
+5. See `SETUP.md` for detailed Node-RED import and configuration instructions
 
 **ZPL Printer Integration:**
 - Service: `client/src/services/zplPrinter.ts`

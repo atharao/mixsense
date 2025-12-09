@@ -259,41 +259,101 @@ node-red
 
 Node-RED will start on http://localhost:1880
 
-### 3. Configure WebSocket Endpoints
+### 3. Import Node-RED Flow
 
-Open Node-RED editor: http://localhost:1880
+**IMPORTANT: We provide a pre-configured Node-RED flow file that you can simply import!**
 
-#### Weight Monitoring Endpoint (for Process Recipe)
+The project includes a ready-to-use Node-RED flow file at: `node-red/flows.json`
 
-Create a flow that:
-1. Reads weight data from load cell (via serial port)
-2. Publishes to WebSocket endpoint: `/ws/weight`
-3. Sends data every second in one of these formats:
-   - Simple numeric: `"1234.56"`
-   - JSON: `{"weight": 1234.56, "stable": true}`
-   - With units: `"1234.56 kg"`
+#### Method 1: Quick Import (Recommended)
 
-**Example Flow:**
+1. **Open Node-RED editor**: http://localhost:1880
+2. **Click the menu icon** (three horizontal lines in top-right corner)
+3. **Select "Import"**
+4. **Click "select a file to import"**
+5. **Navigate to** `node-red/flows.json` in your project folder
+6. **Click "Import"**
+7. **Click "Deploy"** (red button in top-right)
+
+#### Method 2: Copy-Paste Import
+
+1. Open `node-red/flows.json` in a text editor
+2. Copy all contents
+3. Open Node-RED editor: http://localhost:1880
+4. Click menu icon → "Import"
+5. Paste the JSON content
+6. Click "Import"
+7. Click "Deploy"
+
+### 4. What's Included in the Flow
+
+The imported flow contains two groups:
+
+#### **Weight Monitoring WebSocket** (`/ws/weight`)
+- **WebSocket endpoint**: `/ws/weight` (for Process Recipe page)
+- **Test flow included**: Generates fake weight data every 1 second (20-50 kg range)
+- **Ready for hardware**: Replace "Inject" node with actual serial port node for PLC/load cell integration
+- **Data format**: `{"weight": 25.34, "timestamp": "2025-12-09T..."}`
+
+#### **Barcode Scanner WebSocket** (`/ws/barcode`)
+- **WebSocket endpoint**: `/ws/barcode` (for Process Batch page)
+- **Test flow included**: Manual inject button to send fake barcode data
+- **Ready for hardware**: Replace "Inject" node with actual USB HID or serial input for scanner integration
+- **Data format**: `{"recipeId": 34, "stepId": 51, "materialCode": "M-001", ...}`
+
+### 5. Testing the Flow (Using Fake Data)
+
+The imported flow includes test data generators so you can try the application immediately:
+
+1. **Test Weight Monitoring**:
+   - The weight data is automatically sent every 1 second
+   - Open Process Recipe page in MixSense
+   - You should see "CONNECTED" and live weight updates (20-50 kg)
+
+2. **Test Barcode Scanner**:
+   - In Node-RED, click the inject button (square button) in the "Barcode" group
+   - Open Process Batch page in MixSense
+   - You should see "CONNECTED" and barcode data received
+
+### 6. Connecting Real Hardware
+
+To integrate with actual load cells and barcode scanners:
+
+#### **For Load Cell (Weight Monitoring)**:
+1. Add a **Serial Port** input node or appropriate PLC node
+2. Add a **Function** node to parse weight data from your device
+3. Connect to the existing **WebSocket Out** node (`/ws/weight`)
+4. Remove or disable the fake data generator (Inject node)
+
+**Example Real Flow:**
 ```
-[Serial Port] → [Function: Parse Weight] → [WebSocket Out: /ws/weight]
+[Serial Port: /dev/ttyUSB0] → [Function: Parse PLC Weight] → [WebSocket Out: /ws/weight]
 ```
 
-#### Barcode Scanner Endpoint (for Process Batch)
+#### **For Barcode Scanner**:
+1. Add a **USB HID** input node or **Serial Port** node for your scanner
+2. Add a **Function** node to format barcode data to expected JSON format
+3. Connect to the existing **WebSocket Out** node (`/ws/barcode`)
+4. Remove or disable the fake data generator (Inject node)
 
-Create a flow that:
-1. Reads barcode data from scanner (via USB HID)
-2. Publishes to WebSocket endpoint: `/ws/barcode`
-3. Sends data in pipe-delimited format:
-   ```
-   recipeId|stepId|materialCode|actualWeight|userId|timestamp
-   ```
-
-**Example Flow:**
+**Example Real Flow:**
 ```
-[USB HID Input] → [Function: Format Barcode] → [WebSocket Out: /ws/barcode]
+[Serial Port: Scanner] → [Function: Format Barcode JSON] → [WebSocket Out: /ws/barcode]
 ```
 
-### 4. Configure Node-RED to Start on Boot (Optional)
+**Expected Barcode Data Format:**
+```javascript
+{
+  recipeId: number,
+  stepId: number,
+  materialCode: string,
+  actualWeight: number,
+  userId: number,
+  timestamp: ISO date string
+}
+```
+
+### 7. Configure Node-RED to Start on Boot (Optional)
 
 **Windows:**
 - Create a batch file `start-nodered.bat`:
@@ -309,10 +369,11 @@ sudo systemctl enable node-red
 sudo systemctl start node-red
 ```
 
-### 5. Verify Node-RED Connection
+### 8. Verify Node-RED Connection
 
 - Frontend will show "CONNECTED" when data is actively being received
 - Check Node-RED debug panel for incoming data
+- Use the debug nodes (debug 4 and debug 5) in the flow to monitor data flow
 
 ---
 
