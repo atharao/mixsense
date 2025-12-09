@@ -1,6 +1,12 @@
 import axios from 'axios';
 
-const ZPL_PRINTER_URL = '/zpl';
+// Use environment variable in production, fallback to proxy path in development
+const ZPL_PRINTER_URL = import.meta.env.VITE_ZPL_PRINTER_URL
+  ? (import.meta.env.VITE_ZPL_PRINTER_URL as string).endsWith('/')
+    ? import.meta.env.VITE_ZPL_PRINTER_URL
+    : `${import.meta.env.VITE_ZPL_PRINTER_URL}/`
+  : '/zpl';
+
 const PRINTER_NAME = 'ZDesigner ZD421-300dpi ZPL';
 
 interface PrintLabelParams {

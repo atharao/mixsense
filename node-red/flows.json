@@ -1,0 +1,253 @@
+[
+    {
+        "id": "6a7a223f28596cfc",
+        "type": "tab",
+        "label": "MixSense",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "5f6df30e36c65ddf",
+        "type": "group",
+        "z": "6a7a223f28596cfc",
+        "style": {
+            "stroke": "#999999",
+            "stroke-opacity": "1",
+            "fill": "none",
+            "fill-opacity": "1",
+            "label": true,
+            "label-position": "nw",
+            "color": "#a4a4a4"
+        },
+        "nodes": [
+            "inject1",
+            "function1",
+            "wsout1",
+            "fc287ca40a5631dd",
+            "6eec1be21f465d45"
+        ],
+        "x": 54,
+        "y": 59,
+        "w": 892,
+        "h": 262
+    },
+    {
+        "id": "a6f596bb33762b91",
+        "type": "group",
+        "z": "6a7a223f28596cfc",
+        "style": {
+            "stroke": "#999999",
+            "stroke-opacity": "1",
+            "fill": "none",
+            "fill-opacity": "1",
+            "label": true,
+            "label-position": "nw",
+            "color": "#a4a4a4"
+        },
+        "nodes": [
+            "4a52a3468b2aaaa6",
+            "7c6e8d1971d7b0df",
+            "dcfc7b5b0d8fa573",
+            "10124fd6ad5ecc62",
+            "a56d6f121a016bc3"
+        ],
+        "x": 54,
+        "y": 339,
+        "w": 892,
+        "h": 262
+    },
+    {
+        "id": "wss1",
+        "type": "websocket-listener",
+        "path": "/ws/weight",
+        "wholemsg": "false"
+    },
+    {
+        "id": "7d872009d92f7827",
+        "type": "websocket-listener",
+        "path": "/ws/barcode",
+        "wholemsg": "false"
+    },
+    {
+        "id": "inject1",
+        "type": "inject",
+        "z": "6a7a223f28596cfc",
+        "g": "5f6df30e36c65ddf",
+        "name": "Fake Data Every 1 Second",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "1",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payloadType": "date",
+        "x": 240,
+        "y": 160,
+        "wires": [
+            [
+                "function1"
+            ]
+        ]
+    },
+    {
+        "id": "function1",
+        "type": "function",
+        "z": "6a7a223f28596cfc",
+        "g": "5f6df30e36c65ddf",
+        "name": "Generate Fake Weight",
+        "func": "let randomWeight = (Math.random() * (50 - 20) + 20).toFixed(2);\n\nmsg.payload = {\n    weight: randomWeight,\n    timestamp: new Date().toISOString()\n};\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 580,
+        "y": 160,
+        "wires": [
+            [
+                "fc287ca40a5631dd",
+                "wsout1"
+            ]
+        ]
+    },
+    {
+        "id": "wsout1",
+        "type": "websocket out",
+        "z": "6a7a223f28596cfc",
+        "g": "5f6df30e36c65ddf",
+        "name": "Weight",
+        "server": "wss1",
+        "client": "",
+        "x": 870,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "fc287ca40a5631dd",
+        "type": "debug",
+        "z": "6a7a223f28596cfc",
+        "g": "5f6df30e36c65ddf",
+        "name": "debug 4",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 770,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "4a52a3468b2aaaa6",
+        "type": "function",
+        "z": "6a7a223f28596cfc",
+        "g": "a6f596bb33762b91",
+        "name": "Generate Fake BarCode",
+        "func": "msg.payload = {\n    recipeId: 34,\n    stepId: 51,\n    materialCode: \"M-001\",\n    actualWeight: 2.5,\n    userId: 2,\n    timestamp: new Date().toISOString(),\n};\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 590,
+        "y": 440,
+        "wires": [
+            [
+                "7c6e8d1971d7b0df",
+                "10124fd6ad5ecc62"
+            ]
+        ]
+    },
+    {
+        "id": "7c6e8d1971d7b0df",
+        "type": "debug",
+        "z": "6a7a223f28596cfc",
+        "g": "a6f596bb33762b91",
+        "name": "debug 5",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 750,
+        "y": 560,
+        "wires": []
+    },
+    {
+        "id": "dcfc7b5b0d8fa573",
+        "type": "inject",
+        "z": "6a7a223f28596cfc",
+        "g": "a6f596bb33762b91",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 160,
+        "y": 440,
+        "wires": [
+            [
+                "4a52a3468b2aaaa6"
+            ]
+        ]
+    },
+    {
+        "id": "10124fd6ad5ecc62",
+        "type": "websocket out",
+        "z": "6a7a223f28596cfc",
+        "g": "a6f596bb33762b91",
+        "name": "BarCode ",
+        "server": "7d872009d92f7827",
+        "client": "",
+        "x": 860,
+        "y": 440,
+        "wires": []
+    },
+    {
+        "id": "6eec1be21f465d45",
+        "type": "comment",
+        "z": "6a7a223f28596cfc",
+        "g": "5f6df30e36c65ddf",
+        "name": "Weight Coming from PLC ",
+        "info": "",
+        "x": 190,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "a56d6f121a016bc3",
+        "type": "comment",
+        "z": "6a7a223f28596cfc",
+        "g": "a6f596bb33762b91",
+        "name": "Barcode String coming from PLC",
+        "info": "",
+        "x": 210,
+        "y": 380,
+        "wires": []
+    }
+]
